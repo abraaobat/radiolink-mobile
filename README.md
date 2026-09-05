@@ -1,58 +1,77 @@
-# RadioLink Mobile
+# RadioLink Platform
 
-**Smartphone-first, Bluetooth-first amateur radio platform.**
+**Cross-platform, Bluetooth-first amateur radio application hub.**
 
-RadioLink Mobile is an open-source project for integrating Android/iOS smartphones with amateur radios through Bluetooth/BLE, with the phone acting as the main computer and user interface while the radio remains the RF endpoint.
+RadioLink is an open-source platform for Android, iOS, Linux and macOS that connects computers and smartphones directly to amateur radios/TNCs, preferably through Bluetooth/BLE.
 
-> **Phone = computer. Radio = RF. Bluetooth = bridge.**
+> **Device = computer. Radio = RF. Bluetooth = preferred bridge.**
 
 ## Why
 
-Traditional mobile radio-computing stacks often depend on Raspberry Pi/Linux boxes, external displays, GPS modules, cables and multiple daemons. RadioLink Mobile starts from a cleaner premise: modern smartphones already provide the display, CPU, storage, GPS, connectivity, battery and polished UX.
+The value of DigiPi is not only running individual radio applications; it is the convenience of gathering several functions in one place and switching between them easily. RadioLink keeps that idea, but removes the requirement for a Raspberry Pi/Linux appliance when the user's phone or computer can run the radio stack directly.
 
-## Initial scope
+RadioLink aims to provide one consistent hub for:
 
-- Bluetooth/BLE device discovery and connection
-- KISS transport
-- AX.25 packet handling
-- APRS receive/transmit
-- APRS station map
-- APRS messaging
-- Basic radio control where supported
-- Android and iOS apps
-- Winlink Packet in a later MVP phase
-- Driver model for multiple radios/TNCs
-- Optional RadioLink Bridge for legacy radios
+- APRS
+- Packet / AX.25
+- Winlink
+- KISS diagnostics
+- radio control
+- SSTV and other future digital-mode modules
 
-## Explicitly out of MVP
+The normal user experience should look like one product with selectable modules, not a collection of daemons and configuration files.
 
-- Raspberry Pi / DigiPi dependency
-- DMR
-- LoRa / mesh
-- General-purpose Linux services
-- Large gateway/server deployments
+## Target platforms
 
-These may integrate later, but they must not complicate the core mobile experience.
+- Android
+- iOS
+- Linux desktop/headless
+- macOS desktop/headless
+
+## Transport strategy
+
+1. Bluetooth/BLE radio or embedded KISS TNC — preferred.
+2. Bluetooth KISS TNC attached to a conventional radio.
+3. USB/audio interfaces where needed.
+4. Optional RadioLink Bridge for legacy radios.
 
 ## Architecture
 
 ```text
-Android / iOS
-     │
-     ├── UI: map, messages, radio, settings
-     │
-     ├── Radio Core: APRS, AX.25, messaging
-     │
-     ├── Driver Layer
-     │
-     └── Bluetooth / BLE
+Android / iOS / Linux / macOS
               │
-              ▼
-      Radio / TNC / Bridge
+        RadioLink Shell
               │
-              ▼
+ ┌────────────┼──────────────┐
+ │            │              │
+APRS        Packet         Winlink
+ │            │              │
+ └────── RadioLink Core ──────┘
+              │
+      Protocols + Drivers
+              │
+      Bluetooth / USB
+              │
+        Radio / TNC
+              │
              RF
 ```
+
+## App Hub principle
+
+The home screen should make each function easy to select:
+
+```text
+RAD IOLINK
+
+● Radio connected
+
+[ APRS ]    [ WINLINK ]
+[ PACKET ]  [ SSTV ]
+[ KISS ]    [ RADIO ]
+```
+
+Protocol details remain available for diagnostics, but they should not dominate the normal workflow.
 
 ## Repository
 
@@ -60,28 +79,31 @@ Android / iOS
 radiolink-mobile/
 ├── apps/
 │   ├── android/
-│   └── ios/
+│   ├── ios/
+│   ├── linux/
+│   └── macos/
 ├── packages/
 │   ├── core/
 │   ├── protocols/
 │   ├── drivers/
+│   ├── services/
 │   └── ui/
+├── tools/
+│   └── radiolink-cli/
 ├── hardware/
 │   └── bridge/
 ├── docs/
-│   ├── PRODUCT.md
-│   ├── ARCHITECTURE.md
-│   ├── ROADMAP.md
-│   └── adr/
 └── tests/
 ```
 
+The repository keeps its current GitHub name for continuity; the product name is now **RadioLink Platform**.
+
 ## Current phase
 
-**F0 — Project Foundation**
+**F0 — Platform Foundation**
 
-See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md) and [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md).
+See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md) and the new App Hub/platform decision in ADR-0002.
 
 ## Status
 
-Early architecture / proof-of-concept stage. The first technical target is a real **Bluetooth/BLE + KISS + APRS** path with a supported radio/TNC.
+Early architecture / proof-of-concept stage. The first technical path should validate a real Bluetooth/BLE + KISS + APRS workflow on desktop first, while keeping the protocol core portable to mobile.
