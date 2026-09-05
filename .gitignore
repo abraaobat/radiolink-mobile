@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+*.iml
+
+# Xcode
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Node / JS tooling if adopted
+node_modules/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
