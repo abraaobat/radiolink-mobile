@@ -2,7 +2,9 @@
 
 ## Architectural statement
 
-RadioLink is a cross-platform amateur-radio application hub. Android, iOS, Linux and macOS are first-class hosts. The host device owns application logic, user experience, local data and protocol orchestration. Radios/TNCs expose RF and device capabilities through Bluetooth/BLE whenever possible, with USB/audio as a secondary compatibility path.
+RadioLink is a cross-platform amateur-radio application hub. Android, iOS, Linux and macOS are first-class hosts. The host device owns application logic, user experience, local data and protocol orchestration, and should also own modem/TNC processing whenever a reliable audio/PTT transport makes that practical.
+
+Radios and adapters expose RF-side capabilities through Bluetooth/BLE whenever possible, with USB/audio as the deterministic reference path for conventional radios.
 
 ```text
 ┌──────────────────────────────────────┐
@@ -14,6 +16,7 @@ RadioLink is a cross-platform amateur-radio application hub. Android, iOS, Linux
 │                                      │
 │ RadioLink Core                       │
 │ Protocol Core                        │
+│ Software Modem/TNC where practical   │
 │ Driver Layer                         │
 └──────────────────┬───────────────────┘
                    │ Bluetooth / USB
@@ -24,6 +27,60 @@ RadioLink is a cross-platform amateur-radio application hub. Android, iOS, Linux
                    ▼
                   RF
 ```
+
+## Core architectural rule: host-first TNC
+
+A smartphone or computer is already a powerful computing platform. RadioLink should not move AFSK/AX.25 processing into an ESP32 merely to save host CPU.
+
+The embedded controller exists primarily to solve physical radio integration and cable-free transport.
+
+The preferred development model is therefore:
+
+```text
+Radio
+  │
+audio RX/TX + PTT
+  │
+Radio interface / RadioLink Bridge
+  │
+USB audio/control
+  │
+Host
+  │
+Software TNC / RadioLink modem
+  │
+AX.25 / APRS / Packet
+```
+
+After the radio interface is proven, the same bridge may add a second operating mode:
+
+```text
+Radio
+  │
+audio RX/TX + PTT
+  │
+ESP32 bridge
+├── AFSK
+├── AX.25
+└── KISS
+  │
+BLE
+  │
+RadioLink host
+```
+
+This embedded-TNC mode exists to enable a compact Mobilinkd-like cable-free workflow, not because the host lacks processing power.
+
+## Why raw Bluetooth audio is not the default packet path
+
+Bluetooth audio stacks may introduce codec compression, resampling, AGC, noise suppression, buffering and variable latency. Those behaviors can be acceptable for voice but are undesirable for deterministic AFSK modem operation.
+
+Therefore:
+
+1. BLE KISS/data is preferred for wireless Packet/APRS operation.
+2. USB audio/PTT is preferred for reference software-TNC validation.
+3. Raw Bluetooth audio modem operation is experimental and must not be assumed reliable across platforms.
+4. Wi-Fi audio streaming may be explored later, but is not part of the initial MVP.
 
 ## Repository layers
 
@@ -39,7 +96,8 @@ Responsibilities:
 - location services;
 - notifications;
 - platform-specific storage/adapters;
-- background/headless execution where supported.
+- background/headless execution where supported;
+- host audio capture/playback integration where software-TNC mode is supported.
 
 ### 2. App Hub / Module Shell
 
@@ -56,7 +114,7 @@ Future modules can include SSTV and selected digital modes.
 
 ### 3. Core
 
-`packages/core`
+`crates/radiolink-core`
 
 Platform-neutral domain logic:
 - station model;
@@ -69,9 +127,7 @@ Platform-neutral domain logic:
 
 ### 4. Protocols
 
-`packages/protocols`
-
-Protocol codecs and state machines:
+Protocol crates include:
 - KISS framing;
 - AX.25 framing/parsing;
 - APRS decoding/encoding;
@@ -80,13 +136,42 @@ Protocol codecs and state machines:
 
 Protocol code must be testable without a real radio.
 
-### 5. Drivers
+### 5. TNC / modem layer
 
-`packages/drivers`
+The TNC layer must support multiple backends without changing APRS/Packet modules.
 
-Drivers translate device-specific Bluetooth/USB/services/commands into a common capability interface.
+```text
+                 RadioLink TNC API
+                        │
+        ┌───────────────┼────────────────┐
+        │               │                │
+ Embedded TNC      External TNC     Host Software TNC
+  BLE KISS           BLE KISS       audio/PTT backend
+        │               │                │
+      Radio           Radio       Bridge/DigiRig + Radio
+```
 
-Conceptual API:
+Conceptually:
+
+```text
+TncBackend
+├── connect()
+├── disconnect()
+├── receiveFrame()
+├── sendFrame()
+├── status()
+└── capabilities()
+```
+
+A future native RadioLink modem can implement this same backend interface. During early validation, Direwolf serves as a trusted reference software TNC on desktop.
+
+### 6. Drivers
+
+`crates/radiolink-drivers`
+
+Drivers translate device-specific Bluetooth/USB/services/commands into common capabilities.
+
+Conceptual capability model:
 
 ```text
 RadioDevice
@@ -100,12 +185,11 @@ RadioDevice
 │   ├── ptt
 │   ├── serial
 │   ├── kiss
-│   ├── tnc
+│   ├── embeddedTnc
+│   ├── hostTncCompatible
 │   ├── radioControl
 │   ├── usb
 │   └── telemetry
-├── receiveFrames()
-├── sendFrame()
 └── optional radio controls
 ```
 
@@ -113,61 +197,18 @@ RadioDevice
 
 A radio advertising Bluetooth is **not automatically Packet/APRS-ready**. Bluetooth is only a transport. RadioLink must identify what the radio actually exposes.
 
-Every device profile should classify these capabilities independently:
-
-```text
-Bluetooth
-[ ] CAT / radio control
-[ ] Audio RX
-[ ] Audio TX
-[ ] PTT
-[ ] Serial/data transport
-[ ] KISS
-[ ] Embedded TNC
-```
-
 Rules:
 
 1. `Bluetooth = true` does not imply `KISS = true`.
 2. `Bluetooth = true` does not imply `TNC = true`.
 3. CAT-only Bluetooth can control the radio but cannot by itself carry AX.25/APRS frames.
-4. Bluetooth audio may permit a software TNC only if usable bidirectional audio and PTT are exposed reliably.
+4. Bluetooth audio permits software-TNC operation only if bidirectional audio and PTT are exposed reliably enough for modem use.
 5. A radio with BLE KISS / embedded TNC can connect directly to the RadioLink KISS backend.
-6. A conventional radio can use DigiRig-class USB audio/PTT plus a software TNC such as Direwolf on desktop hosts.
+6. A conventional radio can use USB audio/PTT plus a host software TNC.
 7. An external BLE KISS TNC can provide the same logical TNC service for a radio without an embedded TNC.
+8. RadioLink Bridge must advertise whether it is operating as audio/PTT interface, embedded KISS TNC, or both.
 
-### TNC backend abstraction
-
-APRS/Packet modules must not care where the TNC lives.
-
-```text
-                 RadioLink TNC API
-                        │
-          ┌─────────────┼─────────────┐
-          │             │             │
-     Embedded TNC   External TNC   Software TNC
-       BLE KISS       BLE KISS       Direwolf
-          │             │             │
-        Radio         Radio      DigiRig + Radio
-```
-
-Conceptually, modules consume a shared interface:
-
-```text
-TncBackend
-├── connect()
-├── disconnect()
-├── receiveFrame()
-├── sendFrame()
-├── status()
-└── capabilities()
-```
-
-This allows the same APRS, Packet and future Winlink modules to work with different hardware paths.
-
-### 6. Services
-
-`packages/services`
+### 7. Services
 
 Shared higher-level services such as:
 - device registry;
@@ -175,12 +216,6 @@ Shared higher-level services such as:
 - station/message persistence;
 - diagnostics/logging;
 - optional Internet bridges such as APRS-IS later.
-
-### 7. UI
-
-`packages/ui`
-
-Shared design system/view models where practical. Native platform conventions remain authoritative.
 
 ### 8. CLI / Headless
 
@@ -199,21 +234,82 @@ radiolink serve
 
 The CLI uses the same Core, Protocol and Driver layers as GUI applications.
 
-### 9. Optional Hardware Bridge
+## RadioLink Bridge
 
 `hardware/bridge`
 
-A future compact accessory for radios without native Bluetooth/data interfaces.
+The Bridge is an optional compact accessory for radios without native smartphone/desktop-friendly interfaces.
 
-Its role is constrained to transport/TNC/PTT/CAT/audio adaptation. It must not become a second general-purpose computer.
+### Bridge V0.x — radio interface mode
+
+First responsibility:
+- audio RX;
+- audio TX;
+- PTT;
+- safe level conditioning;
+- host transport;
+- optional CAT/control.
+
+Reference proof path:
+
+```text
+Quansheng / conventional radio
+        │
+       K-plug
+        │
+conditioning + codec + PTT
+        │
+     ESP32-S3
+        │
+       USB
+        │
+Mac/Linux host
+        │
+Direwolf / software TNC
+```
+
+### Bridge later — embedded TNC mode
+
+After audio/PTT is validated:
+- AFSK 1200 modem;
+- AX.25 frame handling as needed;
+- KISS transport;
+- BLE KISS;
+- mobile cable-free workflow.
+
+The Bridge must not become a second general-purpose computer.
 
 ## Data flow — APRS receive
+
+### Host software-TNC path
 
 ```text
 RF
  ↓
-Radio/TNC
- ↓ Bluetooth KISS / USB / audio TNC
+Radio
+ ↓ audio
+RadioLink Bridge / DigiRig
+ ↓ USB audio
+Software TNC / modem on host
+ ↓ AX.25 frames
+TncBackend
+ ↓
+APRS decoder
+ ↓
+RadioLink Core
+ ↓
+APRS Module
+ ↓
+Station List / Map / Message UI
+```
+
+### BLE KISS path
+
+```text
+RF
+ ↓
+Radio / embedded or external TNC
+ ↓ BLE KISS
 Device Driver / TNC Backend
  ↓
 KISS decoder
@@ -225,8 +321,6 @@ APRS decoder
 RadioLink Core
  ↓
 APRS Module
- ↓
-Station List / Map / Message UI
 ```
 
 ## Supported connection patterns
@@ -243,13 +337,21 @@ RadioLink host ↔ BLE KISS ↔ Radio/TNC ↔ RF
 RadioLink host ↔ BLE KISS TNC ↔ audio/PTT ↔ Radio ↔ RF
 ```
 
-### C. Radio + DigiRig + software TNC
+### C. Radio + USB audio/PTT + host software TNC
 
 ```text
-RadioLink desktop ↔ Direwolf ↔ USB audio/PTT ↔ DigiRig ↔ Radio ↔ RF
+RadioLink desktop ↔ software TNC ↔ USB audio/PTT ↔ Bridge/DigiRig ↔ Radio ↔ RF
 ```
 
-### D. Bluetooth CAT-only radio
+This is the preferred reference path for bringing up conventional-radio hardware.
+
+### D. RadioLink Bridge embedded-TNC mode
+
+```text
+RadioLink mobile ↔ BLE KISS ↔ RadioLink Bridge [AFSK/AX.25] ↔ Radio ↔ RF
+```
+
+### E. Bluetooth CAT-only radio
 
 ```text
 RadioLink host ↔ Bluetooth CAT ↔ Radio
@@ -257,20 +359,39 @@ RadioLink host ↔ Bluetooth CAT ↔ Radio
 
 This supports control only unless another TNC/audio path is also present.
 
+## Development sequence for conventional-radio support
+
+```text
+1. electrical radio interface
+2. safe RX/TX audio levels
+3. PTT control
+4. USB audio/control path
+5. software-TNC validation on desktop
+6. real APRS RX/TX validation
+7. embedded AFSK implementation
+8. BLE KISS transport
+9. mobile cable-free validation
+```
+
+This prevents modem firmware bugs from being confused with hardware/audio-level problems.
+
 ## Key architectural constraints
 
 1. Android, iOS, Linux and macOS are first-class targets.
 2. No Raspberry Pi is required for core operation.
 3. DigiPi is a product inspiration/reference, not a runtime dependency.
-4. The user sees one hub with modules, not separate unrelated programs.
-5. Bluetooth/BLE is the preferred radio transport, but Bluetooth alone must never be assumed to provide Packet/TNC capability.
-6. USB/audio is a supported compatibility transport.
-7. Protocol/core code must be platform-neutral and independently testable.
-8. Device-specific behavior belongs in drivers.
-9. Module-specific behavior should not leak into device drivers.
-10. APRS/Packet modules consume a TNC backend abstraction rather than binding directly to Direwolf or a specific BLE radio.
-11. Linux/macOS may expose GUI and CLI/headless modes.
-12. UI presents user concepts before protocol concepts.
+4. The host is the preferred computing layer, including modem/TNC processing where practical.
+5. The user sees one hub with modules, not separate unrelated programs.
+6. Bluetooth/BLE is the preferred cable-free transport, but Bluetooth alone must never be assumed to provide Packet/TNC capability.
+7. USB/audio is a supported and preferred reference transport for software-TNC validation.
+8. Raw Bluetooth audio is not the default AFSK transport.
+9. Protocol/core code must be platform-neutral and independently testable.
+10. Device-specific behavior belongs in drivers.
+11. Module-specific behavior should not leak into device drivers.
+12. APRS/Packet modules consume a TNC backend abstraction rather than binding directly to Direwolf or a specific BLE radio.
+13. The RadioLink Bridge must first be useful as a radio interface; embedded TNC functionality is additive.
+14. Linux/macOS may expose GUI and CLI/headless modes.
+15. UI presents user concepts before protocol concepts.
 
 ## Interoperability strategy
 
@@ -279,6 +400,6 @@ Prefer established protocols/transports:
 - KISS;
 - AX.25;
 - APRS;
-- USB serial/audio when necessary.
+- USB audio/serial when necessary.
 
 RadioLink-specific extensions should only be introduced where existing standards cannot represent a required capability cleanly, and must be documented.
