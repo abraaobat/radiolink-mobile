@@ -21,6 +21,9 @@ Establish product boundaries, cross-platform architecture, repository layout and
 - [x] Define Bluetooth-first architecture.
 - [x] Expand official targets to Android, iOS, Linux and macOS.
 - [x] Adopt App Hub Architecture inspired by DigiPi's convenience.
+- [x] Define rule: Bluetooth capability must not be treated as synonymous with KISS/TNC capability.
+- [x] Define TNC backend abstraction: embedded TNC, external BLE KISS TNC or software TNC.
+- [x] Create initial compatibility capability matrix.
 - [x] Create Roadmap Master.
 - [x] Record ADR-0001.
 - [x] Record ADR-0002 for cross-platform App Hub architecture.
@@ -35,23 +38,24 @@ A developer can clone the repository and understand the platform targets, module
 
 ---
 
-## F1 — Shared Core + Device Abstraction
+## F1 — Shared Core + Device/TNC Abstraction
 
 **Status:** NOT STARTED
 
 ### Goal
-Create the platform-neutral core and device capability model used by all hosts.
+Create the platform-neutral core and capability model used by all hosts, including a TNC backend abstraction so modules do not depend directly on one hardware path.
 
 ### Deliverables
 - [ ] Core project/toolchain bootstrap.
-- [ ] RadioDevice abstraction.
-- [ ] capability schema.
-- [ ] connection/session model.
-- [ ] module registry model.
-- [ ] test harness.
+- [ ] `RadioDevice` abstraction.
+- [ ] Capability schema with independent flags for Bluetooth, CAT, audio RX/TX, PTT, serial, KISS and TNC.
+- [ ] `TncBackend` abstraction.
+- [ ] Connection/session model.
+- [ ] Module registry model.
+- [ ] Test harness.
 
 ### Exit criteria
-Core logic runs in tests without Android/iOS/Linux/macOS-specific Bluetooth APIs.
+Core logic runs in tests without Android/iOS/Linux/macOS-specific Bluetooth APIs and APRS/Packet modules can consume a generic TNC backend.
 
 ---
 
@@ -60,20 +64,21 @@ Core logic runs in tests without Android/iOS/Linux/macOS-specific Bluetooth APIs
 **Status:** NOT STARTED
 
 ### Goal
-Discover, connect and maintain reliable sessions with Bluetooth/BLE radios/TNCs.
+Discover, connect and maintain reliable sessions with Bluetooth/BLE radios/TNCs while identifying the actual services/capabilities exposed by each device.
 
 ### Deliverables
 - [ ] Device scan.
 - [ ] Pair/connect flow.
-- [ ] reconnect behavior.
+- [ ] Reconnect behavior.
 - [ ] BLE service/characteristic discovery.
-- [ ] raw RX/TX diagnostics.
-- [ ] first reference driver.
-- [ ] desktop implementation first.
-- [ ] mobile adapters after desktop validation.
+- [ ] Capability detection/profile mapping.
+- [ ] Raw RX/TX diagnostics.
+- [ ] First reference driver.
+- [ ] Desktop implementation first.
+- [ ] Mobile adapters after desktop validation.
 
 ### Exit criteria
-RadioLink can connect to the reference device and exchange raw data reliably.
+RadioLink can connect to the reference device, exchange raw data reliably and correctly distinguish control/audio/KISS/TNC capabilities.
 
 ---
 
@@ -83,14 +88,15 @@ RadioLink can connect to the reference device and exchange raw data reliably.
 
 ### Deliverables
 - [ ] KISS encoder/decoder.
-- [ ] escaping/unescaping.
-- [ ] streaming parser.
-- [ ] fragmented BLE frame handling.
-- [ ] captured-frame fixtures.
-- [ ] driver-to-KISS adapter.
+- [ ] Escaping/unescaping.
+- [ ] Streaming parser.
+- [ ] Fragmented BLE frame handling.
+- [ ] Captured-frame fixtures.
+- [ ] Driver-to-KISS adapter.
+- [ ] TNC-backend-to-KISS adapter.
 
 ### Exit criteria
-Real KISS frames from reference hardware reach the shared protocol core deterministically.
+Real KISS frames from reference hardware or a software TNC backend reach the shared protocol core deterministically.
 
 ---
 
@@ -103,11 +109,11 @@ Real KISS frames from reference hardware reach the shared protocol core determin
 - [ ] AX.25 UI frame parsing.
 - [ ] APRS position decode/encode.
 - [ ] APRS message decode/encode.
-- [ ] basic status/telemetry/text handling.
-- [ ] diagnostics preservation for unsupported packets.
+- [ ] Basic status/telemetry/text handling.
+- [ ] Diagnostics preservation for unsupported packets.
 
 ### Exit criteria
-Captured and live APRS RF packets decode correctly through the shared core.
+Captured and live APRS RF packets decode correctly through the shared core independently of where the TNC lives.
 
 ---
 
@@ -120,15 +126,17 @@ Use desktop as the first full validation environment before mobile hardening.
 
 ### Deliverables
 - [ ] RadioLink desktop shell.
-- [ ] module launcher.
-- [ ] radio connection screen.
+- [ ] Module launcher.
+- [ ] Radio connection screen.
 - [ ] KISS monitor.
 - [ ] APRS receive view.
-- [ ] basic APRS transmit.
+- [ ] Basic APRS transmit.
 - [ ] Linux/macOS parity baseline.
+- [ ] Validate at least one direct BLE KISS path.
+- [ ] Validate at least one software-TNC path using Direwolf + DigiRig or equivalent.
 
 ### Exit criteria
-A desktop user can connect a Bluetooth KISS radio/TNC and complete an APRS RX/TX workflow from the RadioLink hub.
+A desktop user can complete an APRS RX/TX workflow from the RadioLink hub through either a hardware BLE KISS TNC or a software TNC backend.
 
 ---
 
@@ -146,6 +154,7 @@ Expose the shared core on Linux/macOS through terminal workflows.
 - [ ] `radiolink aprs`
 - [ ] `radiolink packet`
 - [ ] `radiolink serve`
+- [ ] `radiolink capabilities`
 
 ### Exit criteria
 Core radio diagnostics and Packet/APRS operations can run without the GUI.
@@ -157,16 +166,16 @@ Core radio diagnostics and Packet/APRS operations can run without the GUI.
 **Status:** NOT STARTED
 
 ### Deliverables
-- [ ] station list.
-- [ ] map.
-- [ ] last-heard state.
-- [ ] local persistence.
-- [ ] position beacon TX.
-- [ ] chat-like APRS messaging.
+- [ ] Station list.
+- [ ] Map.
+- [ ] Last-heard state.
+- [ ] Local persistence.
+- [ ] Position beacon TX.
+- [ ] Chat-like APRS messaging.
 - [ ] ACK/REJ handling.
 
 ### Exit criteria
-APRS is a coherent module available from the RadioLink hub.
+APRS is a coherent module available from the RadioLink hub regardless of whether frames come from Direwolf, an external BLE KISS TNC or an embedded radio TNC.
 
 ---
 
@@ -175,13 +184,14 @@ APRS is a coherent module available from the RadioLink hub.
 **Status:** NOT STARTED
 
 ### Deliverables
-- [ ] connected AX.25 transport spike.
-- [ ] packet terminal.
-- [ ] connection/session state.
+- [ ] Connected AX.25 transport spike.
+- [ ] Packet terminal.
+- [ ] Connection/session state.
 - [ ] BBS/RMS interoperability tests.
+- [ ] Shared TNC backend usage.
 
 ### Exit criteria
-A user can open Packet from the launcher and conduct a practical connected-mode session.
+A user can open Packet from the launcher and conduct a practical connected-mode session through a supported TNC backend.
 
 ---
 
@@ -190,13 +200,14 @@ A user can open Packet from the launcher and conduct a practical connected-mode 
 **Status:** NOT STARTED
 
 ### Deliverables
-- [ ] capability-gated frequency/channel state.
-- [ ] mode/power/PTT hooks where safely exposed.
-- [ ] unsupported-state UX.
-- [ ] shared state with APRS/Packet modules.
+- [ ] Capability-gated frequency/channel state.
+- [ ] Mode/power/PTT hooks where safely exposed.
+- [ ] Unsupported-state UX.
+- [ ] Shared state with APRS/Packet modules.
+- [ ] Support control-only Bluetooth devices without falsely marking them as Packet-capable.
 
 ### Exit criteria
-Richer radios expose control without making control mandatory for simpler KISS TNCs.
+Richer radios expose control without making control mandatory for simpler KISS TNCs, and CAT-only devices are represented accurately.
 
 ---
 
@@ -210,14 +221,15 @@ Bring the proven hub/core/device architecture to Android.
 ### Deliverables
 - [ ] Android shell.
 - [ ] Bluetooth lifecycle.
-- [ ] permissions.
-- [ ] location/background policy.
-- [ ] module launcher.
+- [ ] Permissions.
+- [ ] Location/background policy.
+- [ ] Module launcher.
 - [ ] APRS/Packet parity baseline.
-- [ ] beta distribution build.
+- [ ] Capability-aware device screen.
+- [ ] Beta distribution build.
 
 ### Exit criteria
-Android completes the same core workflows validated on desktop.
+Android completes the same supported core workflows validated on desktop.
 
 ---
 
@@ -228,9 +240,10 @@ Android completes the same core workflows validated on desktop.
 ### Deliverables
 - [ ] iOS shell.
 - [ ] CoreBluetooth adapter.
-- [ ] background/location behavior.
-- [ ] module launcher.
+- [ ] Background/location behavior.
+- [ ] Module launcher.
 - [ ] APRS/Packet parity baseline.
+- [ ] Capability-aware device screen.
 - [ ] TestFlight build.
 
 ### Exit criteria
@@ -243,11 +256,12 @@ iPhone completes the same supported core workflows within iOS constraints.
 **Status:** NOT STARTED
 
 ### Deliverables
-- [ ] feasibility/architecture decision.
+- [ ] Feasibility/architecture decision.
 - [ ] Packet connection transport integration.
-- [ ] inbox/outbox/compose model.
+- [ ] Inbox/outbox/compose model.
 - [ ] RMS configuration.
-- [ ] interoperability testing.
+- [ ] TNC backend integration.
+- [ ] Interoperability testing.
 
 ### Exit criteria
 A supported host/radio combination completes a practical Winlink Packet exchange from the same RadioLink hub.
@@ -258,37 +272,60 @@ A supported host/radio combination completes a practical Winlink Packet exchange
 
 **Status:** NOT STARTED
 
+### Goal
+Make hardware support capability-driven and prevent “Bluetooth” from being treated as a proxy for Packet/TNC compatibility.
+
 ### Deliverables
-- [ ] stable driver interface.
-- [ ] capability schema documentation.
-- [ ] driver test harness.
-- [ ] device profile template.
-- [ ] compatibility matrix.
-- [ ] contribution guide.
+- [ ] Stable driver interface.
+- [ ] Capability schema documentation.
+- [ ] Driver test harness.
+- [ ] Device profile template.
+- [x] Initial compatibility matrix document.
+- [ ] Per-device capability flags:
+  - [ ] Bluetooth.
+  - [ ] CAT / radio control.
+  - [ ] Audio RX.
+  - [ ] Audio TX.
+  - [ ] PTT.
+  - [ ] Serial/data transport.
+  - [ ] KISS.
+  - [ ] Embedded TNC.
+  - [ ] USB audio.
+  - [ ] USB serial/CAT.
+- [ ] Tested-platform matrix: Android / iOS / Linux / macOS.
+- [ ] Supported-module matrix: APRS / Packet / Winlink / Radio Control / diagnostics.
+- [ ] Contribution guide.
 
 ### Initial candidate device classes
-- [ ] embedded BLE KISS radio.
-- [ ] BLE KISS TNC.
-- [ ] USB/audio interface.
+- [ ] Class A — Embedded BLE KISS/TNC radio.
+- [ ] Class B — External BLE KISS TNC.
+- [ ] Class C — DigiRig/USB audio + software TNC.
+- [ ] Class D — Bluetooth CAT-only radio.
+- [ ] Class E — Bluetooth audio/PTT radio requiring validation.
 - [ ] RadioLink Bridge.
+
+### Exit criteria
+A contributor can describe a radio accurately by capabilities and add support without modifying APRS/Packet core logic.
 
 ---
 
-## F14 — USB / Audio Compatibility Layer
+## F14 — USB / Audio + Software TNC Compatibility Layer
 
 **Status:** NOT STARTED
 
 ### Goal
-Support conventional radios where Bluetooth KISS is not available.
+Support conventional radios where Bluetooth KISS/TNC is not available.
 
 ### Candidate paths
 - [ ] DigiRig-class USB audio/PTT.
-- [ ] external software TNC/modem adapter where needed.
-- [ ] serial CAT interfaces.
-- [ ] platform-specific USB device integration.
+- [ ] Direwolf as the default desktop software TNC backend for AX.25/APRS/Packet where appropriate.
+- [ ] External software TNC/modem adapter interface.
+- [ ] Serial CAT interfaces.
+- [ ] Platform-specific USB device integration.
+- [ ] Capability detection that can combine CAT from one transport and TNC/audio from another.
 
 ### Guardrail
-Bluetooth remains the preferred path; USB/audio exists for compatibility.
+Bluetooth remains the preferred path; USB/audio exists for compatibility. Bluetooth alone never implies Packet capability.
 
 ---
 
@@ -303,8 +340,8 @@ Provide an optional compact Bluetooth accessory for radios without smartphone/de
 - [ ] BLE transport.
 - [ ] KISS/TNC.
 - [ ] PTT.
-- [ ] audio/data interface.
-- [ ] optional CAT/control.
+- [ ] Audio/data interface.
+- [ ] Optional CAT/control.
 
 ### Guardrail
 The Bridge is an accessory, not a second general-purpose computer.
@@ -316,12 +353,12 @@ The Bridge is an accessory, not a second general-purpose computer.
 Only after the core hub is stable:
 
 - SSTV.
-- selected additional digital modes.
+- Selected additional digital modes.
 - APRS-IS / iGate experiments.
-- richer offline maps.
-- additional packet speeds/modems.
-- integration with RadioNode-BR.
-- possible LoRa/DMR capability modules kept separate from the core MVP.
+- Richer offline maps.
+- Additional packet speeds/modems.
+- Integration with RadioNode-BR.
+- Possible LoRa/DMR capability modules kept separate from the core MVP.
 
 # Current execution order
 
@@ -336,13 +373,21 @@ After desktop/core validation:
 F10 Android → F11 iOS → F12 Winlink
 
 Then:
-F13 Drivers → F14 USB/audio → F15 Bridge
+F13 Drivers → F14 USB/audio + software TNC → F15 Bridge
 ```
 
 # Immediate next action
 
-Complete F0 by selecting the shared-core toolchain, first reference desktop host and first Bluetooth KISS radio/TNC. The preferred PoC should prove the shortest architecture possible:
+Complete F0 by selecting the shared-core toolchain, first reference desktop host and first Bluetooth KISS radio/TNC. In parallel, define the first Class C fallback test using a conventional radio + DigiRig + Direwolf.
+
+The preferred shortest PoC remains:
 
 ```text
-Mac/Linux ↔ Bluetooth KISS ↔ Radio ↔ RF
+Mac/Linux ↔ Bluetooth KISS ↔ Radio/TNC ↔ RF
+```
+
+The compatibility fallback is:
+
+```text
+Mac/Linux ↔ Direwolf ↔ DigiRig ↔ conventional radio ↔ RF
 ```
