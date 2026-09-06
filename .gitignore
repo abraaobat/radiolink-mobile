@@ -26,3 +26,6 @@ node_modules/
 
 # Logs
 *.log
+
+# Rust build artifacts
+target/
