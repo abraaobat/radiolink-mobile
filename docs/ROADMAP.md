@@ -27,7 +27,9 @@ Establish product boundaries, cross-platform architecture, repository layout and
 - [x] Create Roadmap Master.
 - [x] Record ADR-0001.
 - [x] Record ADR-0002 for cross-platform App Hub architecture.
-- [ ] Define shared-core toolchain/language decision.
+- [x] Define shared-core toolchain/language decision: **Rust stable + Cargo**.
+- [x] Record ADR-0003 for Rust Shared Core.
+- [x] Bootstrap Cargo workspace and initial Rust crates.
 - [ ] Select first reference radio/TNC for PoC.
 - [ ] Select first desktop reference environment (macOS or Linux).
 - [ ] Capture Bluetooth services/characteristics for first reference device.
@@ -40,19 +42,22 @@ A developer can clone the repository and understand the platform targets, module
 
 ## F1 — Shared Core + Device/TNC Abstraction
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 ### Goal
 Create the platform-neutral core and capability model used by all hosts, including a TNC backend abstraction so modules do not depend directly on one hardware path.
 
 ### Deliverables
-- [ ] Core project/toolchain bootstrap.
-- [ ] `RadioDevice` abstraction.
-- [ ] Capability schema with independent flags for Bluetooth, CAT, audio RX/TX, PTT, serial, KISS and TNC.
-- [ ] `TncBackend` abstraction.
+- [x] Core project/toolchain bootstrap.
+- [x] Initial `RadioCapabilities` model.
+- [x] Initial `TncTransport` abstraction.
+- [x] Initial crate boundaries for KISS, AX.25, APRS, TNC and drivers.
+- [ ] Stable `RadioDevice` abstraction.
+- [ ] Complete capability schema.
 - [ ] Connection/session model.
 - [ ] Module registry model.
-- [ ] Test harness.
+- [ ] Shared fixture/test harness.
+- [ ] Host-facing API boundary for future FFI.
 
 ### Exit criteria
 Core logic runs in tests without Android/iOS/Linux/macOS-specific Bluetooth APIs and APRS/Packet modules can consume a generic TNC backend.
@@ -84,11 +89,12 @@ RadioLink can connect to the reference device, exchange raw data reliably and co
 
 ## F3 — KISS Transport Core
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 ### Deliverables
-- [ ] KISS encoder/decoder.
-- [ ] Escaping/unescaping.
+- [x] Initial KISS data-frame encoder.
+- [x] Reserved-byte escaping test.
+- [ ] KISS frame decoder.
 - [ ] Streaming parser.
 - [ ] Fragmented BLE frame handling.
 - [ ] Captured-frame fixtures.
@@ -102,10 +108,12 @@ Real KISS frames from reference hardware or a software TNC backend reach the sha
 
 ## F4 — AX.25 + APRS Core
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 ### Deliverables
-- [ ] AX.25 address parsing.
+- [x] Initial AX.25 address model.
+- [x] Initial APRS position model.
+- [ ] AX.25 address binary parsing/encoding.
 - [ ] AX.25 UI frame parsing.
 - [ ] APRS position decode/encode.
 - [ ] APRS message decode/encode.
@@ -142,19 +150,22 @@ A desktop user can complete an APRS RX/TX workflow from the RadioLink hub throug
 
 ## F6 — RadioLink CLI / Headless
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 ### Goal
 Expose the shared core on Linux/macOS through terminal workflows.
 
 ### Candidate commands
-- [ ] `radiolink scan`
-- [ ] `radiolink connect`
-- [ ] `radiolink monitor`
-- [ ] `radiolink aprs`
-- [ ] `radiolink packet`
-- [ ] `radiolink serve`
-- [ ] `radiolink capabilities`
+- [x] CLI crate/bootstrap.
+- [x] `radiolink scan` placeholder.
+- [x] `radiolink monitor` placeholder.
+- [x] `radiolink aprs` placeholder.
+- [x] `radiolink packet` placeholder.
+- [ ] `radiolink connect`.
+- [ ] `radiolink serve`.
+- [ ] `radiolink capabilities`.
+- [ ] Real device discovery.
+- [ ] Real KISS monitor.
 
 ### Exit criteria
 Core radio diagnostics and Packet/APRS operations can run without the GUI.
@@ -219,7 +230,8 @@ Richer radios expose control without making control mandatory for simpler KISS T
 Bring the proven hub/core/device architecture to Android.
 
 ### Deliverables
-- [ ] Android shell.
+- [ ] Android shell in Kotlin.
+- [ ] Rust core binding.
 - [ ] Bluetooth lifecycle.
 - [ ] Permissions.
 - [ ] Location/background policy.
@@ -238,7 +250,8 @@ Android completes the same supported core workflows validated on desktop.
 **Status:** NOT STARTED
 
 ### Deliverables
-- [ ] iOS shell.
+- [ ] iOS shell in Swift.
+- [ ] Rust core binding.
 - [ ] CoreBluetooth adapter.
 - [ ] Background/location behavior.
 - [ ] Module launcher.
@@ -378,15 +391,23 @@ F13 Drivers → F14 USB/audio + software TNC → F15 Bridge
 
 # Immediate next action
 
-Complete F0 by selecting the shared-core toolchain, first reference desktop host and first Bluetooth KISS radio/TNC. In parallel, define the first Class C fallback test using a conventional radio + DigiRig + Direwolf.
+Complete the remaining F0 hardware decisions:
 
-The preferred shortest PoC remains:
+1. select **macOS or Linux** as the first reference desktop host;
+2. select the first **BLE KISS radio/TNC**;
+3. capture its Bluetooth services/characteristics;
+4. add real KISS/AX.25/APRS fixtures;
+5. connect that transport to the Rust `TncTransport` abstraction and `radiolink-cli`.
+
+In parallel, define the Class C fallback test using a conventional radio + DigiRig + Direwolf.
+
+Preferred shortest PoC:
 
 ```text
 Mac/Linux ↔ Bluetooth KISS ↔ Radio/TNC ↔ RF
 ```
 
-The compatibility fallback is:
+Compatibility fallback:
 
 ```text
 Mac/Linux ↔ Direwolf ↔ DigiRig ↔ conventional radio ↔ RF
