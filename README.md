@@ -6,6 +6,8 @@ RadioLink is an open-source platform for Android, iOS, Linux and macOS that conn
 
 > **Device = computer. Radio = RF. Bluetooth = preferred bridge.**
 
+A key architectural rule is now explicit: **the host device should perform as much protocol/modem processing as practical**. The optional RadioLink Bridge exists first to solve the physical radio interface — audio RX/TX, PTT and transport — while embedded AFSK/AX.25/KISS remains an additional capability for cable-free mobile operation.
+
 ## Why
 
 The value of DigiPi is not only running individual radio applications; it is the convenience of gathering several functions in one place and switching between them easily. RadioLink keeps that idea, but removes the requirement for a Raspberry Pi/Linux appliance when the user's phone or computer can run the radio stack directly.
@@ -20,6 +22,27 @@ RadioLink aims to provide one consistent hub for:
 - SSTV and other future digital-mode modules
 
 The normal user experience should look like one product with selectable modules, not a collection of daemons and configuration files.
+
+## TNC strategy
+
+RadioLink supports more than one place for the TNC/modem to live:
+
+1. **Host software TNC** — preferred for development and conventional radios. The phone/computer owns AFSK/AX.25 processing when a clean audio/PTT path is available.
+2. **Embedded radio TNC** — use the radio's native KISS/TNC when exposed.
+3. **External BLE KISS TNC** — Mobilinkd-class path.
+4. **RadioLink Bridge embedded TNC mode** — the bridge can later perform AFSK/AX.25 locally and expose KISS over BLE for fully cable-free mobile use.
+
+The bridge therefore has two conceptual modes:
+
+```text
+HOST-TNC MODE
+Radio ↔ audio/PTT ↔ RadioLink Bridge ↔ USB ↔ RadioLink/Direwolf on host
+
+EMBEDDED-TNC MODE
+Radio ↔ audio/PTT ↔ RadioLink Bridge [AFSK/AX.25] ↔ BLE KISS ↔ RadioLink
+```
+
+Raw Bluetooth audio is not the primary packet-radio transport because codec processing, buffering, latency and platform behavior can reduce modem reliability.
 
 ## DigiPi functional benchmark
 
@@ -52,10 +75,10 @@ Platform-specific Bluetooth, UI, location, permissions and background behavior r
 
 ## Transport strategy
 
-1. Bluetooth/BLE radio or embedded KISS TNC — preferred.
+1. Bluetooth/BLE radio or embedded KISS TNC — preferred when reliable KISS/data exists.
 2. Bluetooth KISS TNC attached to a conventional radio.
-3. USB/audio interfaces where needed.
-4. Optional RadioLink Bridge for legacy radios.
+3. USB audio/PTT + software TNC — reference validation path for conventional radios.
+4. Optional RadioLink Bridge for legacy radios, first as an audio/PTT interface and later with embedded KISS/TNC mode.
 
 ## Architecture
 
@@ -70,11 +93,15 @@ APRS        Packet         Winlink
  │            │              │
  └────── Rust Shared Core ────┘
               │
-      Protocols + Drivers
+      TNC Backend Abstraction
               │
-      Bluetooth / USB
+ ┌────────────┼─────────────────────┐
+ │            │                     │
+BLE KISS   Software TNC       RadioLink Bridge
+ │            │              audio/PTT or KISS
+ └────────────┴─────────────────────┘
               │
-        Radio / TNC
+            Radio
               │
              RF
 ```
@@ -84,7 +111,7 @@ APRS        Packet         Winlink
 The home screen should make each function easy to select:
 
 ```text
-RAD IOLINK
+RADIOLINK
 
 ● Radio connected
 
@@ -126,8 +153,16 @@ The repository keeps its current GitHub name for continuity; the product name is
 
 **F0 — Platform Foundation**
 
-The shared-core language/toolchain decision is complete: **Rust**. See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [DigiPi Benchmark](docs/DIGIPI-BENCHMARK.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), ADR-0002 and [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md).
+The shared-core language/toolchain decision is complete: **Rust**. The next hardware proof should validate the conventional-radio path before embedding a modem in the ESP32:
+
+```text
+radio → audio/PTT interface → host software TNC → AX.25/APRS
+```
+
+After that baseline is proven, the same bridge hardware can gain embedded AFSK/AX.25 + BLE KISS mode.
+
+See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [DigiPi Benchmark](docs/DIGIPI-BENCHMARK.md), and the ADRs under `docs/adr/`.
 
 ## Status
 
-Early architecture / proof-of-concept stage. The Rust workspace, TNC abstraction, capability model, initial KISS encoder and CLI bootstrap are now in place. The next technical path is to select the first reference desktop host and Bluetooth KISS radio/TNC, then prove a real RX/TX path through the shared core.
+Early architecture / proof-of-concept stage. The Rust workspace, TNC abstraction, capability model, initial KISS encoder and CLI bootstrap are in place. The development strategy now uses a host software TNC as the reference modem during hardware bring-up, while preserving BLE KISS as the target cable-free mobile mode.
