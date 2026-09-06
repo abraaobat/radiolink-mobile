@@ -21,6 +21,12 @@ RadioLink aims to provide one consistent hub for:
 
 The normal user experience should look like one product with selectable modules, not a collection of daemons and configuration files.
 
+## DigiPi functional benchmark
+
+DigiPi 2.2-1 is used as a **functional coverage benchmark**, not as an architectural template. RadioLink tracks which useful DigiPi operations should become native modules, integrations, later-phase features or intentionally omitted appliance-management functions.
+
+See [DigiPi 2.2-1 → RadioLink Functional Benchmark](docs/DIGIPI-BENCHMARK.md).
+
 ## Target platforms
 
 - Android
@@ -120,7 +126,7 @@ The repository keeps its current GitHub name for continuity; the product name is
 
 **F0 — Platform Foundation**
 
-The shared-core language/toolchain decision is complete: **Rust**. See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), ADR-0002 and [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md).
+The shared-core language/toolchain decision is complete: **Rust**. See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [DigiPi Benchmark](docs/DIGIPI-BENCHMARK.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), ADR-0002 and [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md).
 
 ## Status
 
