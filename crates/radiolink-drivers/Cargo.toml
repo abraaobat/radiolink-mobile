@@ -1,0 +1,10 @@
+[package]
+name = "radiolink-drivers"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+radiolink-core = { path = "../radiolink-core" }
+radiolink-tnc = { path = "../radiolink-tnc" }
+tracing.workspace = true
