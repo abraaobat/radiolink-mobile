@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/radiolink-core",
+  "crates/radiolink-kiss",
+  "crates/radiolink-ax25",
+  "crates/radiolink-aprs",
+  "crates/radiolink-tnc",
+  "crates/radiolink-drivers",
+  "tools/radiolink-cli",
+]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+rust-version = "1.80"
+
+[workspace.dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
