@@ -28,6 +28,22 @@ The normal user experience should look like one product with selectable modules,
 - Linux desktop/headless
 - macOS desktop/headless
 
+## Shared Core toolchain
+
+The shared protocol/domain core is implemented in **Rust**.
+
+- Rust stable + Cargo workspace
+- `tokio` for async work where required
+- `serde` for serialization
+- `thiserror` / `anyhow` for errors
+- `tracing` for structured diagnostics
+- `clap` for the native CLI
+- Kotlin host layer on Android
+- Swift host layer on iOS
+- native Linux/macOS adapters for Bluetooth/USB and desktop integration
+
+Platform-specific Bluetooth, UI, location, permissions and background behavior remain outside the Rust core.
+
 ## Transport strategy
 
 1. Bluetooth/BLE radio or embedded KISS TNC — preferred.
@@ -46,7 +62,7 @@ Android / iOS / Linux / macOS
  │            │              │
 APRS        Packet         Winlink
  │            │              │
- └────── RadioLink Core ──────┘
+ └────── Rust Shared Core ────┘
               │
       Protocols + Drivers
               │
@@ -77,17 +93,19 @@ Protocol details remain available for diagnostics, but they should not dominate 
 
 ```text
 radiolink-mobile/
+├── Cargo.toml
 ├── apps/
 │   ├── android/
 │   ├── ios/
 │   ├── linux/
 │   └── macos/
-├── packages/
-│   ├── core/
-│   ├── protocols/
-│   ├── drivers/
-│   ├── services/
-│   └── ui/
+├── crates/
+│   ├── radiolink-core/
+│   ├── radiolink-kiss/
+│   ├── radiolink-ax25/
+│   ├── radiolink-aprs/
+│   ├── radiolink-tnc/
+│   └── radiolink-drivers/
 ├── tools/
 │   └── radiolink-cli/
 ├── hardware/
@@ -102,8 +120,8 @@ The repository keeps its current GitHub name for continuity; the product name is
 
 **F0 — Platform Foundation**
 
-See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md) and the new App Hub/platform decision in ADR-0002.
+The shared-core language/toolchain decision is complete: **Rust**. See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), ADR-0002 and [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md).
 
 ## Status
 
-Early architecture / proof-of-concept stage. The first technical path should validate a real Bluetooth/BLE + KISS + APRS workflow on desktop first, while keeping the protocol core portable to mobile.
+Early architecture / proof-of-concept stage. The Rust workspace, TNC abstraction, capability model, initial KISS encoder and CLI bootstrap are now in place. The next technical path is to select the first reference desktop host and Bluetooth KISS radio/TNC, then prove a real RX/TX path through the shared core.
