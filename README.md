@@ -21,6 +21,18 @@ RadioLink aims to provide one consistent hub for:
 
 The normal user experience should look like one product with selectable modules, not a collection of daemons and configuration files.
 
+## Reference projects
+
+RadioLink uses external projects as engineering references with clearly separated roles:
+
+- **DigiPi** — functional coverage and App Hub benchmark.
+- **Mobilinkd TNC4** — BLE KISS TNC / portable radio-interface benchmark.
+- **HTCommander** — Bluetooth radio integration, device-control and driver/protocol reference.
+
+These are references, not runtime dependencies or wholesale architectural templates.
+
+See [Technical References](docs/REFERENCES.md) and [DigiPi 2.2-1 → RadioLink Functional Benchmark](docs/DIGIPI-BENCHMARK.md).
+
 ## DigiPi functional benchmark
 
 DigiPi 2.2-1 is used as a **functional coverage benchmark**, not as an architectural template. RadioLink tracks which useful DigiPi operations should become native modules, integrations, later-phase features or intentionally omitted appliance-management functions.
@@ -126,8 +138,8 @@ The repository keeps its current GitHub name for continuity; the product name is
 
 **F0 — Platform Foundation**
 
-The shared-core language/toolchain decision is complete: **Rust**. See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [DigiPi Benchmark](docs/DIGIPI-BENCHMARK.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), ADR-0002 and [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md).
+The shared-core language/toolchain decision is complete: **Rust**. See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [Technical References](docs/REFERENCES.md), [DigiPi Benchmark](docs/DIGIPI-BENCHMARK.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), ADR-0002 and [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md).
 
 ## Status
 
-Early architecture / proof-of-concept stage. The Rust workspace, TNC abstraction, capability model, initial KISS encoder and CLI bootstrap are now in place. The next technical path is to select the first reference desktop host and Bluetooth KISS radio/TNC, then prove a real RX/TX path through the shared core.
+Early architecture / proof-of-concept stage. The Rust workspace, TNC abstraction, capability model, initial KISS encoder and CLI bootstrap are now in place. The next technical path is to use macOS as the first desktop reference host, implement real Bluetooth discovery, select the first reference Bluetooth KISS radio/TNC and prove a real RX/TX path through the shared core.
