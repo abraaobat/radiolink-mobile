@@ -12,6 +12,8 @@ RadioLink formally supports three I/O families:
 
 Bluetooth and USB are transports, not application capabilities. The architecture must model what a device actually exposes and keep APRS/Packet/Winlink independent from the physical connection path.
 
+Operational context such as **location and time** is also independent from the radio. A service may use RF/TNC capability from one device while location/time comes from the host, the radio, a USB GPS/GNSS source or another validated provider.
+
 ```text
 ┌──────────────────────────────────────────────┐
 │ Android / iOS / Linux / macOS               │
@@ -22,8 +24,9 @@ Bluetooth and USB are transports, not application capabilities. The architecture
 │                                              │
 │ RadioLink Operations Engine                 │
 │ Capability Registry • Device Registry       │
-│ Transport Manager • Provider Resolution     │
-│ Lifecycle • Recovery • Fallback             │
+│ Context Registry • Provider Resolution      │
+│ Transport Manager • Lifecycle • Recovery    │
+│ Layered Diagnostics • Fallback              │
 │                                              │
 │ Protocol / Service Core                     │
 └──────────────────────┬───────────────────────┘
@@ -42,9 +45,18 @@ Bluetooth and USB are transports, not application capabilities. The architecture
                       RF
 ```
 
+Context providers may enter independently from the host/device side:
+
+```text
+Host location ───────┐
+Radio GPS/GNSS ──────┼→ Context Provider API → Service
+USB GPS / GPSD ──────┤
+Manual/static ───────┘
+```
+
 ## Architectural layering
 
-The preferred dependency direction is:
+The preferred RF/data dependency direction is:
 
 ```text
 Application / UX
@@ -62,7 +74,19 @@ Device / Adapter
 RF
 ```
 
-No higher-level service should know whether a frame ultimately travelled over BLE, USB serial, USB audio or another supported transport.
+Context uses a parallel provider boundary:
+
+```text
+Operational Mode / Service
+       ↓
+Context Provider API
+       ↓
+Provider implementation
+       ↓
+Host / device / transport-specific source
+```
+
+No higher-level service should know whether a frame ultimately travelled over BLE, USB serial, USB audio or another supported transport. Likewise, a position service should not require location to be owned by the radio itself.
 
 ## Repository layers
 
@@ -75,7 +99,7 @@ Responsibilities:
 - permissions;
 - Bluetooth lifecycle;
 - USB/device access where applicable;
-- location services;
+- host location/context adapters;
 - notifications;
 - platform-specific storage/adapters;
 - background/headless execution where supported.
@@ -106,12 +130,14 @@ Responsibilities:
 - resolve devices and adapters;
 - select an appropriate TNC/Modem Provider;
 - select/prefer an appropriate transport;
-- acquire/release radio/audio/serial resources;
+- resolve required Context Providers;
+- acquire/release radio/audio/serial/context resources;
 - start/stop operational services;
 - restore known-good state between mode changes;
 - monitor health;
 - reconnect and recover sessions;
 - provide a compatible fallback path when possible;
+- maintain layered diagnostic state;
 - expose human-readable failure reasons.
 
 Conceptually:
@@ -135,6 +161,20 @@ User action: "Send APRS message"
             APRS
 ```
 
+For a position workflow, context resolution may happen in parallel:
+
+```text
+APRS beacon request
+       │
+       ├→ TNC/transport resolution
+       │
+       └→ LocationProvider resolution
+              ├→ host phone
+              ├→ radio GPS/GNSS
+              ├→ USB GPS
+              └→ other validated source
+```
+
 ### 4. Core
 
 `packages/core`
@@ -145,6 +185,8 @@ Platform-neutral domain logic:
 - radio capability model;
 - connection/session state;
 - operational mode model;
+- context-provider interfaces/state;
+- layered diagnostic-state concepts;
 - module/service orchestration interfaces;
 - routing;
 - local history abstractions;
@@ -174,6 +216,9 @@ Conceptual API:
 ```text
 RadioDevice
 ├── identity
+│   ├── manufacturer/model
+│   ├── hardware revision where known
+│   └── firmware/version where known
 ├── connection state
 ├── transports[]
 │   ├── ble
@@ -190,7 +235,7 @@ RadioDevice
 │   ├── kiss
 │   ├── tnc
 │   ├── radioControl
-│   ├── gps
+│   ├── gpsGnssSourceExposure
 │   └── telemetry
 ├── receiveFrames()
 ├── sendFrame()
@@ -212,7 +257,7 @@ Radio X
     └── KISS
 ```
 
-The Transport Manager must represent these independently.
+A different modern device may expose KISS over BLE while GPS/GNSS data is consumed through USB. The Transport Manager and provider registries must represent these independently.
 
 ## The three official I/O paths
 
@@ -227,7 +272,7 @@ Target use:
 - KISS/data;
 - control;
 - telemetry;
-- GPS/state;
+- radio GPS/GNSS/state exposure where available;
 - lightweight diagnostics.
 
 Bluetooth presence is never treated as shorthand for Packet capability.
@@ -245,6 +290,7 @@ USB-C
 ├── CDC serial → CAT
 ├── CDC serial → KISS/data
 ├── USB Audio → RX/TX
+├── GPS/GNSS/data interface
 ├── network-style interface
 └── power where supported
 ```
@@ -310,6 +356,36 @@ Rules:
 7. A conventional radio can use DigiRig-class USB audio/PTT plus a software TNC on hosts where supported.
 8. An external BLE/USB KISS TNC can provide the same logical TNC service for a radio without an embedded TNC.
 9. Capabilities may be composed from multiple paths, for example CAT over Bluetooth plus TNC/audio over USB.
+10. Firmware/version and required radio-side configuration may materially change whether a capability is actually usable.
+
+## Context Provider abstraction
+
+Location/time are operational inputs, not capabilities owned exclusively by `RadioDevice`.
+
+Initial conceptual providers:
+
+```text
+LocationProvider
+├── HostLocationProvider
+├── RadioGpsProvider
+├── UsbGpsProvider
+├── NetworkGpsProvider / GPSD
+└── ManualLocationProvider
+
+TimeProvider
+├── SystemClockProvider
+├── GpsTimeProvider
+├── NetworkTimeProvider when available
+└── other validated providers
+```
+
+Services request context through the provider API. The Operations Engine / Context Registry resolves an available source according to capability, quality, platform permissions and operator policy.
+
+Guardrails:
+- do not assume `gps=true` means the radio must provide position;
+- do not make Internet/network time mandatory for core RF operation;
+- do not silently switch providers when a switch could materially change operator intent;
+- expose provider selection/state in diagnostics when relevant.
 
 ## TNC / Modem Provider abstraction
 
@@ -340,32 +416,95 @@ TncBackend / ModemProvider
 
 This abstraction also enables future modem-provider interoperability such as Mercury/other implementations without coupling the application directly to a proprietary modem.
 
+## Layered diagnostics
+
+RadioLink must preserve the highest verified stage of a connection rather than collapsing every failure into an application error.
+
+```text
+physical / power
+      ↓
+transport enumeration / Bluetooth pairing
+      ↓
+logical interfaces discovered
+      ↓
+capability match
+      ↓
+TNC/modem/context-provider handshake
+      ↓
+protocol traffic
+      ↓
+service readiness
+```
+
+Examples of useful states:
+
+- `USB device has power but no data interface detected`;
+- `Bluetooth connected; KISS service not exposed`;
+- `KISS provider ready; no AX.25 frames received yet`;
+- `APRS ready; location source unavailable for beacon TX`.
+
+Diagnostics must not claim a specific physical cause if the host can only prove that a higher layer is unavailable.
+
 ## Device Profiles / RadioLink Profiles
 
 Profiles capture known-good combinations instead of forcing users to rediscover hardware-specific settings.
 
+Canonical governance and nominal devices:
+
+- `docs/devices/README.md`;
+- `docs/devices/REGISTRY.md`;
+- `docs/devices/PROFILE-TEMPLATE.md`;
+- `docs/devices/profiles/`.
+
 Potential fields:
-- radio model/firmware;
+- manufacturer/model/hardware revision;
+- firmware version/range;
+- validation state;
 - interface/adapter;
 - cable;
 - transports;
 - PTT method;
 - CAT support;
 - audio RX/TX calibration;
-- verified modes;
+- radio GPS/GNSS exposure;
+- required radio-side settings/preflight recipe;
+- verified services/modes;
 - platform compatibility;
+- layered diagnostic result;
+- captured evidence;
 - known limitations.
 
 Profiles are metadata/configuration and must not replace runtime capability detection where detection is possible.
+
+Device support advances explicitly through:
+
+```text
+RESEARCHED
+   ↓
+CANDIDATE
+   ↓
+LAB_AVAILABLE
+   ↓
+CONNECTED
+   ↓
+RX_VERIFIED
+   ↓
+TX_VERIFIED
+   ↓
+PROFILE_VERIFIED
+   ↓
+SUPPORTED
+```
 
 ## Services
 
 `packages/services`
 
 Shared higher-level services such as:
-- device registry;
+- runtime device registry;
 - capability registry;
 - transport/provider registry;
+- context provider registry;
 - module registry;
 - station/message persistence;
 - diagnostics/logging;
@@ -389,13 +528,17 @@ Linux and macOS support terminal/headless workflows where practical:
 radiolink scan
 radiolink connect
 radiolink capabilities
+radiolink transports
+radiolink pipeline
+radiolink diagnose
+radiolink context
 radiolink monitor
 radiolink aprs
 radiolink packet
 radiolink serve
 ```
 
-The CLI uses the same Core, Protocol, Driver, Transport and Provider layers as GUI applications.
+The CLI uses the same Core, Protocol, Driver, Transport, TNC/Modem Provider and Context Provider layers as GUI applications.
 
 ## Optional RadioLink Bridge
 
@@ -441,7 +584,7 @@ It may define a documented way for radios/accessories to expose:
 - KISS/data;
 - CAT/control;
 - PTT;
-- GPS;
+- GPS/GNSS/context-source availability;
 - battery/telemetry;
 - transport availability.
 
@@ -456,7 +599,9 @@ Candidates:
 - Reticulum;
 - LoRa;
 - modern BBS/store-and-forward;
-- offline radio knowledge tooling;
+- delivery-independent Messaging Service experiments;
+- offline radio knowledge/data services;
+- field readiness/self-test tooling;
 - additional digital modes.
 
 Labs must not become runtime dependencies of the core MVP.
@@ -505,6 +650,22 @@ RadioLink Core
 APRS Service / UX
 ```
 
+### APRS position/beacon context
+
+```text
+Location source
+  ↓
+LocationProvider
+  ↓
+APRS Service
+  ↓
+AX.25 / TNC Provider / Transport
+  ↓
+RF
+```
+
+The location source may be the host, radio or another provider independently from the RF transport.
+
 ## Supported connection patterns
 
 ### A. Radio with embedded BLE KISS/TNC
@@ -539,19 +700,27 @@ RadioLink host ↔ Bluetooth CAT ↔ Radio
 
 Control only unless another TNC/audio path is also present.
 
-### F. Multi-transport radio
+### F. Bluetooth audio/PTT radio
 
 ```text
-                ┌─ BLE → CAT/telemetry
+RadioLink host ↔ Bluetooth audio/PTT ↔ software TNC ↔ Radio ↔ RF
+```
+
+This path remains per-device/platform experimental until audio/PTT behavior is validated.
+
+### G. Multi-transport radio
+
+```text
+                ┌─ BLE → KISS/CAT/telemetry
 RadioLink host ─┤
-                └─ USB-C → KISS/audio
+                └─ USB-C → GPS/KISS/audio/CAT
                          ↓
                         Radio
                          ↓
                          RF
 ```
 
-RadioLink may compose capabilities from both paths.
+RadioLink may compose capabilities and context sources from multiple paths.
 
 ## Key architectural constraints
 
@@ -568,11 +737,15 @@ RadioLink may compose capabilities from both paths.
 11. Transport behavior belongs in the Transport Manager/platform adapters.
 12. Module/service-specific behavior must not leak into device drivers.
 13. APRS/Packet/Winlink consume provider abstractions rather than binding directly to Direwolf, a specific BLE radio or a physical transport.
-14. The Operations Engine owns capability resolution, resource lifecycle, recovery and fallback.
-15. Linux/macOS may expose GUI and CLI/headless modes.
-16. UI presents user intent before protocol concepts.
-17. RadioLink Bridge remains an accessory, not a general-purpose computer.
-18. RadioLink Ready and Labs must not expand the MVP until validated.
+14. Location/time are resolved through Context Providers rather than assumed to belong to the radio.
+15. The Operations Engine owns capability/context resolution, resource lifecycle, recovery and fallback.
+16. Diagnostics preserve the highest verified layer from physical transport through service readiness.
+17. Firmware and required device configuration are part of capability-validation context.
+18. Device research evidence does not equal RadioLink support; support requires explicit profile/bench validation.
+19. Linux/macOS may expose GUI and CLI/headless modes.
+20. UI presents user intent before protocol concepts.
+21. RadioLink Bridge remains an accessory, not a general-purpose computer.
+22. RadioLink Ready and Labs must not expand the MVP until validated.
 
 ## Interoperability strategy
 
@@ -584,6 +757,13 @@ Prefer established protocols/transports:
 - AX.25;
 - APRS;
 - documented CAT/control interfaces;
+- standard GPS/GNSS/NMEA/GPSD-style interfaces where appropriate;
 - IP/network transports where they naturally apply.
 
 RadioLink-specific extensions should only be introduced where existing standards cannot represent a required capability cleanly, and must be documented.
+
+## Decision references
+
+- `docs/adr/ADR-0004-three-path-io-and-platform-ecosystem.md` — transport/provider/platform ecosystem.
+- `docs/adr/ADR-0005-context-providers-and-layered-diagnostics.md` — Context Providers, multi-source operational context and layered diagnostics.
+- `docs/research/PROMOTION-REGISTER.md` — traceability from research findings to architecture, roadmap, implementation and validation.
