@@ -99,7 +99,50 @@ Research documentation:
 
 #### Guardrail
 
-The Tech Prepper is one strong longitudinal source, not a proxy for the entire amateur-radio market. Product hypotheses should be cross-validated with independent sources such as KM4ACK, project issues/discussions, manufacturer documentation, community reports and RadioLink field testing.
+The Tech Prepper is one strong longitudinal source, not a proxy for the entire amateur-radio market.
+
+---
+
+### KM4ACK research corpus
+
+Channel: https://www.youtube.com/@KM4ACK
+
+**Role:** independent cross-source validation and broader amateur-radio software/integration research source.
+
+The local corpus contains **828** items with **0 extraction failures** and spans a broader range of subjects than The Tech Prepper. RadioLink therefore screens the corpus before deep mining.
+
+Initial screening produced:
+
+- A — direct RadioLink core relevance: 154 videos;
+- B — adjacent integration/off-grid/software relevance: 209 videos;
+- C — radio/field context: 330 videos;
+- D — low immediate relevance: 135 videos.
+
+The 363 A+B videos form the primary deep-mining set. C/D are retained for selective review and false-negative recovery.
+
+Early independent validation from KM4ACK strongly supports:
+
+- integration/configuration complexity as a systemic pain point;
+- smartphone-centered Winlink/APRS field operation;
+- KISS/TNC decoupled from transport;
+- BLE and USB as separate transport choices;
+- explicit capability discovery instead of treating Bluetooth as synonymous with TNC access;
+- firmware-aware device profiles;
+- capability composition across simultaneous transports;
+- offline-first field services;
+- transport diagnostics, including USB data-cable failures;
+- the value of companion software when native APRS radio UX is poor.
+
+Research documentation:
+
+- [`research/KM4ACK.md`](research/KM4ACK.md) — corpus snapshot, screening summary and first-pass validation;
+- [`research/EVIDENCE.md`](research/EVIDENCE.md) — source-level evidence ledger;
+- [`research/CONTRADICTIONS.md`](research/CONTRADICTIONS.md) — disagreements and qualifications;
+- [`research/SYNTHESIS.md`](research/SYNTHESIS.md) — source-neutral findings derived from The Tech Prepper + KM4ACK.
+
+#### Guardrail
+
+KM4ACK is a broad technical creator source, not a representative sample of all radio amateurs. Findings should still be checked against protocol/manufacturer documentation, community reports and RadioLink field testing before strong compatibility claims are made.
 
 ---
 
@@ -118,8 +161,14 @@ HTCommander
 The Tech Prepper corpus
   -> field workflow / integration friction / product discovery
 
+KM4ACK corpus
+  -> independent validation / broader software-interface workflows
+
+RadioLink Research Synthesis
+  -> cross-source evidence and confidence
+
 RadioLink Platform
-  -> combines evidence behind one capability-driven architecture
+  -> converts validated evidence into architecture, roadmap and tests
 ```
 
 ## Reference policy
@@ -135,3 +184,4 @@ When studying external projects and sources:
 7. Preserve source provenance for research-derived architectural or product decisions.
 8. Keep contradictory observations visible rather than silently reconciling them.
 9. Raise confidence when the same problem appears independently across multiple sources.
+10. Record firmware/platform/device-version context when capability depends on it.
