@@ -13,9 +13,10 @@ Raw third-party corpora are not committed here. This directory stores derived so
 
 ### KM4ACK
 
-- [`KM4ACK.md`](KM4ACK.md) — corpus snapshot, A/B/C/D screening summary, first-pass validation and KM4ACK-specific hypotheses.
+- [`KM4ACK.md`](KM4ACK.md) — corpus snapshot, A/B/C/D screening summary and first-pass validation.
+- [`KM4ACK-DEEP-MINING.md`](KM4ACK-DEEP-MINING.md) — second-pass mining, promoted findings and Labs/deferred signals.
 
-Corpus status: **828 items, 0 extraction failures**. Because the channel is broader than The Tech Prepper, mining uses a screening stage before deep review.
+Corpus status: **828 items, 0 extraction failures**.
 
 Initial screening:
 
@@ -24,7 +25,7 @@ Initial screening:
 - C — radio/field context: **330**;
 - D — low immediate relevance: **135**.
 
-Primary deep-mining universe: **363 A+B videos**. Screening is provisional; C/D videos may be promoted when evidence searches reveal hidden relevance.
+Primary deep-mining universe: **363 A+B videos**. The deep pass also uses full-corpus targeted scans so C/D false negatives can be promoted when a generic title hides relevant content.
 
 ## Cross-source artifacts
 
@@ -32,6 +33,10 @@ Primary deep-mining universe: **363 A+B videos**. Screening is provisional; C/D 
 - [`CONTRADICTIONS.md`](CONTRADICTIONS.md) — disagreements, reversals and qualifications that must remain visible.
 - [`SYNTHESIS.md`](SYNTHESIS.md) — source-neutral `RL-RS-*` findings supported or qualified across multiple sources.
 - [`MARKET-OPPORTUNITIES.md`](MARKET-OPPORTUNITIES.md) — product/ecosystem hypothesis map.
+
+Current accepted architectural promotion from the second KM4ACK pass:
+
+- [`ADR-0005 — Context Providers and Layered Diagnostics`](../adr/ADR-0005-context-providers-and-layered-diagnostics.md).
 
 ## Research pipeline
 
@@ -117,6 +122,22 @@ A research idea can be promoted into the core product only when it has:
 
 Experimental ideas that fail this test remain in Labs rather than expanding the MVP.
 
-## Current next research action
+## Research status — 2026-09-06
 
-Deep mine KM4ACK classes A and B, then use targeted searches to catch false negatives in C/D. Promote only findings that survive evidence review into `SYNTHESIS.md` and the product roadmap.
+Completed:
+
+- [x] The Tech Prepper corpus build and first mining rounds.
+- [x] The Tech Prepper structured findings and market-opportunity map.
+- [x] KM4ACK corpus build: 828 items / 0 failures.
+- [x] KM4ACK A/B/C/D first-pass screening.
+- [x] KM4ACK deep-mining pass across the high-relevance universe plus targeted full-corpus scans.
+- [x] Cross-source synthesis through `RL-RS-018`.
+- [x] Evidence ledger expanded with KM4ACK deep-pass evidence and initial The Tech Prepper evidence IDs.
+- [x] Promote context-provider/layered-diagnostics decision into ADR-0005.
+
+Next evidence-hardening work:
+
+- [ ] Import timestamp/deep-link segment evidence for findings that directly drive implementation/conformance requirements.
+- [ ] Validate promoted architecture against the RadioLink CLI and owned hardware.
+- [ ] Add manufacturer/protocol documentation as a third evidence class for device-specific claims.
+- [ ] Continue cross-source research only where it can resolve an open question or validate a market hypothesis.
