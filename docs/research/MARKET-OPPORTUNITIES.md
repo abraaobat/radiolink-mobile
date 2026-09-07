@@ -1,7 +1,7 @@
 # RadioLink — Market Opportunities from Research
 
 **Status:** Active hypothesis map  
-**Initial source:** The Tech Prepper corpus  
+**Sources:** The Tech Prepper + KM4ACK  
 **Started:** 2026-09-06
 
 This document separates **market/product opportunities** from the RadioLink implementation roadmap.
@@ -12,14 +12,16 @@ A research signal does not automatically belong in RadioLink Mobile. Opportuniti
 
 | Rank | Opportunity | Current disposition | Evidence strength |
 |---|---|---|---|
-| 1 | RadioLink Platform / Mobile | Core product | High |
+| 1 | RadioLink Platform / Mobile | Core product | Very High |
 | 2 | RadioLink Bridge | Platform hardware track | High |
-| 3 | RadioLink Profiles / Compatibility Registry | Platform data/service track | High |
-| 4 | RadioLink Ready interoperability profile | Strategic ecosystem track | Medium-High |
-| 5 | Modern off-grid messaging / BBS | Labs | Medium |
-| 6 | Offline radio knowledge assistant | Labs / possible separate product | Medium |
-| 7 | Multi-transport / Reticulum network manager | Labs | Medium |
-| 8 | Field power / device telemetry | Adjacent feature opportunity | Low-Medium |
+| 3 | RadioLink Profiles / Compatibility Registry | Platform data/service track | Very High |
+| 4 | RadioLink Ready interoperability profile | Strategic ecosystem track | High |
+| 5 | Resilient Messaging / store-and-forward | Labs / post-MVP service layer | High |
+| 6 | Offline Radio Knowledge Assistant | Labs / possible separate product | Medium |
+| 7 | Off-grid Data Services | Labs / service plugins | Medium |
+| 8 | Multi-transport / Reticulum Network Manager | Labs | Medium |
+| 9 | Field Readiness / Self-Test | Labs / operations feature | Medium |
+| 10 | Field power / device telemetry | Adjacent feature opportunity | Low-Medium |
 
 ---
 
@@ -29,17 +31,9 @@ A research signal does not automatically belong in RadioLink Mobile. Opportuniti
 
 Amateur-radio digital operation is fragmented across radios, interfaces, cables, PTT/CAT methods, TNCs/modems, operating-system configuration and protocol-specific applications.
 
-### Evidence pattern
+### Cross-source evidence pattern
 
-The Tech Prepper repeatedly builds integration and orchestration layers rather than new RF protocols:
-
-- DigiRig-based integration;
-- EmComm Tools mode switching;
-- automatic hardware detection;
-- zero-configuration workflows;
-- mobile experiments;
-- provider/modem integration;
-- plug-and-play Reticulum interfaces.
+The Tech Prepper repeatedly builds EmComm Tools integration/orchestration rather than new RF protocols. KM4ACK independently builds Build-a-Pi, Pat Menu, connection scripts and preconfigured workflows to hide the same setup burden.
 
 ### Product thesis
 
@@ -52,7 +46,7 @@ Operations Engine
    ↓
 Service / Protocol
    ↓
-TNC / Modem Provider
+TNC / Modem / Context Provider
    ↓
 Transport
    ↓
@@ -77,13 +71,13 @@ It addresses the broadest and most repeated research problem while preserving cr
 
 Many useful radios have no modern documented KISS/data interface. Users therefore need radio-specific cables, audio/PTT interfaces and sometimes external TNC hardware.
 
-### Evidence pattern
+### Cross-source evidence pattern
 
-DigiRig and Mobilinkd-class devices repeatedly solve a valuable boundary: converting conventional radio I/O into something a phone/computer can use. The corpus also shows strong value in standardizing interfaces across multiple radios.
+DigiRig and Mobilinkd solve different layers. KM4ACK's direct comparison is especially useful: Mobilinkd provides an embedded Bluetooth TNC and excellent phone/packet convenience, while DigiRig exposes generic audio + serial/CAT and supports broader software-modem workflows such as VARA but requires a host/software modem.
 
 ### Product thesis
 
-A small accessory can make legacy/conventional radios look like a modern RadioLink-capable device:
+A compact accessory can combine the strongest properties of both interface families:
 
 ```text
 Radio
@@ -92,7 +86,8 @@ Radio
  └─ optional CAT
        ↓
 RadioLink Bridge
- ├─ modem/TNC
+ ├─ KISS/TNC
+ ├─ raw audio/modem path
  ├─ BLE
  └─ USB-C
        ↓
@@ -110,15 +105,13 @@ RadioLink host
 - PTT;
 - optional CAT;
 - firmware update;
-- profile-driven calibration.
-
-### Strategic value
-
-This expands the addressable hardware base without embedding radio-specific hacks in the application.
+- capability discovery;
+- profile-driven calibration;
+- BLE ↔ USB fallback.
 
 ### Current disposition
 
-**PLATFORM HARDWARE TRACK — F15.**
+**PLATFORM HARDWARE TRACK — F15.** Prototype only after shared abstractions are proven with existing hardware.
 
 ---
 
@@ -126,24 +119,25 @@ This expands the addressable hardware base without embedding radio-specific hack
 
 ### Problem
 
-Known-good settings are repeatedly rediscovered: cable choice, audio level, PTT method, CAT behavior, TNC type and platform-specific quirks.
+Known-good settings are repeatedly rediscovered: cable choice, firmware, radio menu values, audio level, PTT method, CAT behavior, TNC type and platform-specific quirks.
 
-### Evidence pattern
+### Cross-source evidence pattern
 
-The 2024 Android + DigiRig experiments require different practical audio levels between applications and use reference cards to preserve working settings. The broader corpus repeatedly standardizes known equipment to reduce field uncertainty.
+The Tech Prepper preserves field cards/reference hardware. KM4ACK repeatedly requires precise TNC/connection/menu configuration, and the VGC example shows firmware directly changing Bluetooth/Winlink capability.
 
 ### Product thesis
 
-Create a structured compatibility registry that can be consumed by both users and the Operations Engine.
-
-Example:
+Create a structured compatibility registry consumed by both users and the Operations Engine.
 
 ```text
 Device profile
 ├── manufacturer/model
+├── firmware/range
+├── required radio-side settings
 ├── interface/cable
 ├── transport(s)
-├── capabilities
+├── capabilities by transport
+├── context sources (GPS/GNSS etc.)
 ├── audio RX/TX calibration
 ├── PTT method
 ├── CAT behavior
@@ -155,7 +149,7 @@ Device profile
 
 ### Strategic value
 
-The profile database can become a durable community asset and reduce support cost while improving first-run success.
+The profile database can become a durable community asset, reduce support cost and improve first-run success.
 
 ### Current disposition
 
@@ -167,11 +161,11 @@ The profile database can become a durable community asset and reduce support cos
 
 ### Problem
 
-Manufacturers expose Bluetooth, USB and radio control in incompatible ways. A marketing label such as “Bluetooth radio” does not indicate whether a device supports KISS, audio, PTT, CAT or telemetry.
+Manufacturers expose Bluetooth, USB and radio control in incompatible ways. Marketing labels such as “Bluetooth” or “USB-C” do not reveal KISS, TNC, audio, PTT, CAT, GPS or telemetry capabilities.
 
 ### Evidence pattern
 
-The corpus demonstrates the value of compatible interfaces and the cost of hardware-specific integration. Mercury HF also reinforces the strategic value of interfaces that allow independent provider implementations.
+KM4ACK demonstrates radios where Bluetooth exposes programming/headset/PTT but no TNC, and radios whose firmware later adds a missing TNC/Winlink workflow. The Tech Prepper/Mercury research reinforces the value of documented compatible interfaces.
 
 ### Product thesis
 
@@ -180,47 +174,68 @@ Define a documented interoperability profile for radios/TNCs/accessories.
 Possible scope:
 
 - identity/discovery;
-- capability declaration;
+- firmware/version metadata;
+- capability declaration by transport;
 - BLE KISS profile;
 - USB KISS/CDC profile;
 - CAT/control capability metadata;
-- battery/GPS/frequency/PTT telemetry where available;
-- versioned extension mechanism.
-
-### Strategic value
-
-RadioLink could eventually support manufacturer/community devices without bespoke application logic for each model.
+- PTT/GPS/battery/telemetry where available;
+- versioned extension mechanism;
+- conformance test concept.
 
 ### Current disposition
 
-**STRATEGIC — F16; specification work after core interfaces stabilize.**
+**STRATEGIC — F16; publish only after core interfaces stabilize.**
 
 ---
 
-## OPP-005 — Modern off-grid messaging / BBS
+## OPP-005 — Resilient Messaging / Store-and-forward
 
 ### Problem
 
-Store-and-forward, local bulletins and resilient community messaging remain useful, but traditional BBS command-line UX is inaccessible to many operators.
+The operator wants a message delivered; direct APRS requires reachability at the right moment and traditional BBS/bridge mechanisms expose inconsistent user experiences.
 
-### Evidence pattern
+### Cross-source evidence pattern
 
-The Tech Prepper repeatedly develops BBS systems, modern terminal clients, packet/VARA access and plug-and-play mode selection. The operational value centers on local resilient communication rather than nostalgia for historical interfaces.
+The Tech Prepper explores BBS/private messages/bulletins/files/SITREP workflows. KM4ACK demonstrates:
+
+- APRS store-and-forward for missed recipients;
+- APRSLink;
+- Winlink-over-APRS;
+- APRS message alerts;
+- Meshtastic BBS experiments.
 
 ### Product thesis
 
-A modern messaging layer could expose:
+A future RadioLink `Messaging Service` can expose user-level state while protocol-specific delivery providers remain explicit underneath:
+
+```text
+Message intent
+     ↓
+Messaging Service
+ ├── APRS direct
+ ├── APRS store-and-forward where available
+ ├── Winlink / APRSLink integration
+ ├── Packet/BBS provider
+ └── future local/off-grid providers
+```
+
+Candidate UX concepts:
 
 - inbox/private messages;
+- delivery/ACK state;
 - group/community bulletins;
 - SITREP templates;
 - local files/information;
-- store-and-forward;
-- transport-independent routing where technically appropriate.
+- store-and-forward where the underlying service provides it.
+
+### Guardrail
+
+Do not pretend different networks provide identical delivery guarantees or hide amateur-radio rules/limitations.
 
 ### Current disposition
 
-**LABS.** Do not expand the APRS/Packet MVP around this until the core is stable.
+**LABS / POST-MVP SERVICE LAYER.** APRS/Packet foundations first.
 
 ---
 
@@ -232,7 +247,7 @@ Field operators need manuals, procedures, frequencies, configuration notes and t
 
 ### Evidence pattern
 
-The corpus repeatedly emphasizes offline documents, reference cards, known configurations and local knowledge. Later experiments also explore local AI/knowledge workflows.
+Both corpora emphasize offline documents, reference cards, known configurations and local knowledge. The Tech Prepper later experiments directly with local AI/knowledge workflows.
 
 ### Product thesis
 
@@ -247,7 +262,7 @@ An offline assistant could answer questions using a curated local knowledge base
 
 ### Guardrail
 
-This should not be mixed into the core protocol stack. It can consume RadioLink state/profile data through a clean interface later.
+Do not mix this into the core protocol stack. It can consume RadioLink state/profile data through a clean interface later.
 
 ### Current disposition
 
@@ -255,7 +270,37 @@ This should not be mixed into the core protocol stack. It can consume RadioLink 
 
 ---
 
-## OPP-007 — Multi-transport / Reticulum Network Manager
+## OPP-007 — Off-grid Data Services
+
+### Problem
+
+Operators may need useful data such as weather or local reference information precisely when cellular/Internet access is unavailable.
+
+### Evidence pattern
+
+KM4ACK explores multiple RF-based weather retrieval methods and an offline communication/reference server. The Tech Prepper repeatedly builds offline local information/BBS/knowledge systems.
+
+### Product thesis
+
+Optional higher-level services could expose data retrieval independently from transport:
+
+```text
+Data request
+   ↓
+Data Service
+ ├── RF/weather provider
+ ├── packet/BBS provider
+ ├── local offline database
+ └── Internet provider when available
+```
+
+### Current disposition
+
+**LABS / SERVICE PLUGINS.** Not an APRS decoder responsibility.
+
+---
+
+## OPP-008 — Multi-transport / Reticulum Network Manager
 
 ### Problem
 
@@ -263,7 +308,7 @@ Reticulum and similar systems can use multiple transport types, but real deploym
 
 ### Evidence pattern
 
-The Reticulum series repeatedly adds blueprints, plug-and-play discovery and automated interface generation to reduce setup friction.
+The Tech Prepper Reticulum series repeatedly adds blueprints, plug-and-play discovery and automated interface generation. KM4ACK's mesh/Meshtastic material independently shows a broader demand for resilient local networks, though not necessarily the same architecture.
 
 ### Product thesis
 
@@ -279,7 +324,34 @@ Reticulum/LoRa is not a requirement for the initial RadioLink product and should
 
 ---
 
-## OPP-008 — Field telemetry / hardware health
+## OPP-009 — Field Readiness / Self-Test
+
+### Problem
+
+A technically functional radio stack may still fail operationally if the operator rarely practices it or discovers configuration faults only during an emergency.
+
+### Cross-source evidence pattern
+
+The Tech Prepper uses frequent field tests, training and after-action reports. KM4ACK explicitly describes lack of regular emergency-communications practice as a problem and builds repeatable practice workflows.
+
+### Product thesis
+
+A future readiness layer could provide:
+
+- guided radio/transport self-test;
+- known-good APRS/Packet test flows;
+- connection and context-source verification;
+- exercise checklists;
+- after-action logs;
+- profile validation reminders.
+
+### Current disposition
+
+**LABS / OPERATIONS FEATURE.** Core diagnostics first.
+
+---
+
+## OPP-010 — Field telemetry / hardware health
 
 ### Problem
 
@@ -287,7 +359,7 @@ Field communication failures can come from power, temperature, connection state,
 
 ### Evidence pattern
 
-The corpus includes repeated measurement and monitoring of batteries, temperatures, radios, interfaces and field-system health.
+Both corpora include repeated measurement and monitoring of batteries, temperatures, radios, interfaces and field-system health. The new diagnostics synthesis also shows value in distinguishing power/link failure from protocol failure.
 
 ### Product thesis
 
@@ -297,7 +369,7 @@ A future status surface could expose:
 Radio       connected
 Transport   USB
 TNC         ready
-GPS         locked
+Location    phone GPS / locked
 Battery     76%
 Voltage     13.2 V
 Audio/PTT   verified
@@ -330,19 +402,19 @@ The research suggests a defensible sequence:
 
 1. prove the shared Core and CLI;
 2. prove real RF paths over existing hardware;
-3. deliver mobile-native workflows;
-4. build the compatibility/profile asset;
-5. prototype Bridge only after the abstractions are proven against multiple paths;
-6. stabilize interfaces before publishing RadioLink Ready;
-7. graduate Labs ideas only after independent validation.
+3. prove layered diagnostics and context/provider resolution;
+4. deliver mobile-native workflows;
+5. build the compatibility/profile asset;
+6. prototype Bridge only after abstractions are proven against multiple paths;
+7. stabilize interfaces before publishing RadioLink Ready;
+8. graduate Messaging/Data/Readiness Labs ideas only after the core is reliable.
 
 # Cross-source rule
 
-The Tech Prepper corpus is one strong longitudinal source, not the market itself.
+The Tech Prepper and KM4ACK provide strong independent evidence, but two channels are still not the entire amateur-radio market.
 
-Before changing core scope based on a market hypothesis, compare it against:
+Before changing core scope based on a broader market hypothesis, compare it against:
 
-- KM4ACK;
 - additional technical creators;
 - open-source project issues/discussions;
 - manufacturer documentation;
