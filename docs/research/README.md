@@ -33,10 +33,17 @@ Primary deep-mining universe: **363 A+B videos**. The deep pass also uses full-c
 - [`CONTRADICTIONS.md`](CONTRADICTIONS.md) — disagreements, reversals and qualifications that must remain visible.
 - [`SYNTHESIS.md`](SYNTHESIS.md) — source-neutral `RL-RS-*` findings supported or qualified across multiple sources.
 - [`MARKET-OPPORTUNITIES.md`](MARKET-OPPORTUNITIES.md) — product/ecosystem hypothesis map.
+- [`PROMOTION-REGISTER.md`](PROMOTION-REGISTER.md) — tracks each synthesis finding from research decision through ADR/roadmap, implementation and validation.
 
 Current accepted architectural promotion from the second KM4ACK pass:
 
 - [`ADR-0005 — Context Providers and Layered Diagnostics`](../adr/ADR-0005-context-providers-and-layered-diagnostics.md).
+
+Device-specific research and bench promotion are tracked separately in:
+
+- [`../devices/README.md`](../devices/README.md) — validation-state ladder and support rules;
+- [`../devices/REGISTRY.md`](../devices/REGISTRY.md) — nominal P0/P1/P2/watchlist registry;
+- `../devices/profiles/` — per-device profiles and bench evidence.
 
 ## Research pipeline
 
@@ -59,11 +66,11 @@ Cross-source comparison
       ↓
 Source-neutral synthesis finding
       ↓
-Market/product implication
+Promotion Register
+      ├── adopt → ADR / roadmap / profile
+      └── defer → Labs / rejected hypothesis
       ↓
-ADR / roadmap / profile / Labs
-      ↓
-Implementation + field validation
+Implementation + bench/field validation
 ```
 
 ## What must be recorded
@@ -79,7 +86,9 @@ Research must not depend on conversation memory. Preserve at least:
 7. **Confidence** — why confidence increased or decreased.
 8. **Negative decisions** — rejected/deferred ideas and the reason they were not promoted.
 9. **Version context** — firmware, platform and device version when capability depends on them.
-10. **Validation status** — research-only, prototype-confirmed, field-tested or supported.
+10. **Validation status** — research-only, prototype-confirmed, bench-tested, field-tested or supported.
+11. **Promotion state** — whether a finding is only synthesized, roadmap-linked, implemented or validated.
+12. **Device support state** — never infer `SUPPORTED` from research evidence alone.
 
 ## Finding ID policy
 
@@ -122,6 +131,8 @@ A research idea can be promoted into the core product only when it has:
 
 Experimental ideas that fail this test remain in Labs rather than expanding the MVP.
 
+Every promotion/defer/reject decision should be reflected in [`PROMOTION-REGISTER.md`](PROMOTION-REGISTER.md).
+
 ## Research status — 2026-09-06
 
 Completed:
@@ -134,10 +145,13 @@ Completed:
 - [x] Cross-source synthesis through `RL-RS-018`.
 - [x] Evidence ledger expanded with KM4ACK deep-pass evidence and initial The Tech Prepper evidence IDs.
 - [x] Promote context-provider/layered-diagnostics decision into ADR-0005.
+- [x] Create the Research Promotion Register.
+- [x] Create nominal device-registry governance and initial lab profiles.
 
 Next evidence-hardening work:
 
 - [ ] Import timestamp/deep-link segment evidence for findings that directly drive implementation/conformance requirements.
 - [ ] Validate promoted architecture against the RadioLink CLI and owned hardware.
 - [ ] Add manufacturer/protocol documentation as a third evidence class for device-specific claims.
+- [ ] Advance device profiles only with exact firmware/host/transport/provider/service evidence.
 - [ ] Continue cross-source research only where it can resolve an open question or validate a market hypothesis.
