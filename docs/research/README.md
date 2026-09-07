@@ -2,26 +2,36 @@
 
 This directory contains traceable research artifacts used to inform RadioLink architecture, roadmap and product hypotheses.
 
-Raw third-party corpora are not committed here. This directory stores only derived findings, source references and decisions.
+Raw third-party corpora are not committed here. This directory stores derived source records, evidence, findings, contradictions, synthesis and decisions.
 
 ## Current sources
 
 ### The Tech Prepper
 
 - [`THE-TECH-PREPPER.md`](THE-TECH-PREPPER.md) — corpus/source record and methodology.
-- [`FINDINGS.md`](FINDINGS.md) — structured findings and RadioLink consequences.
-- [`MARKET-OPPORTUNITIES.md`](MARKET-OPPORTUNITIES.md) — product/ecosystem hypothesis map.
+- [`FINDINGS.md`](FINDINGS.md) — original source-specific findings and RadioLink consequences.
 
 ### KM4ACK
 
-**Status:** corpus collection / pending ingestion and cross-source validation.
+- [`KM4ACK.md`](KM4ACK.md) — corpus snapshot, A/B/C/D screening summary, first-pass validation and KM4ACK-specific hypotheses.
 
-When available, KM4ACK findings should not be placed in a disconnected report. They should be compared against the existing finding taxonomy and used to:
+Corpus status: **828 items, 0 extraction failures**. Because the channel is broader than The Tech Prepper, mining uses a screening stage before deep review.
 
-- confirm an existing finding;
-- contradict or qualify an existing finding;
-- add new evidence;
-- create a genuinely new finding.
+Initial screening:
+
+- A — direct core relevance: **154**;
+- B — adjacent integration/off-grid/software: **209**;
+- C — radio/field context: **330**;
+- D — low immediate relevance: **135**.
+
+Primary deep-mining universe: **363 A+B videos**. Screening is provisional; C/D videos may be promoted when evidence searches reveal hidden relevance.
+
+## Cross-source artifacts
+
+- [`EVIDENCE.md`](EVIDENCE.md) — source-level evidence ledger (`EV-TP-*`, `EV-KM-*`).
+- [`CONTRADICTIONS.md`](CONTRADICTIONS.md) — disagreements, reversals and qualifications that must remain visible.
+- [`SYNTHESIS.md`](SYNTHESIS.md) — source-neutral `RL-RS-*` findings supported or qualified across multiple sources.
+- [`MARKET-OPPORTUNITIES.md`](MARKET-OPPORTUNITIES.md) — product/ecosystem hypothesis map.
 
 ## Research pipeline
 
@@ -30,11 +40,19 @@ External source
       ↓
 Local corpus / source capture
       ↓
-Problem / workaround extraction
+Screening / relevance classification
       ↓
-Structured finding
+Evidence extraction
       ↓
-Cross-source confidence
+Source-specific finding
+      ↓
+Cross-source comparison
+      ├── confirms
+      ├── qualifies
+      ├── contradicts
+      └── extends
+      ↓
+Source-neutral synthesis finding
       ↓
 Market/product implication
       ↓
@@ -43,14 +61,31 @@ ADR / roadmap / profile / Labs
 Implementation + field validation
 ```
 
+## What must be recorded
+
+Research must not depend on conversation memory. Preserve at least:
+
+1. **Source snapshot** — channel/project, collection date, corpus size, transcript source and date range.
+2. **Screening decision** — what was selected/excluded and whether the classification is provisional.
+3. **Evidence** — source, video, date, observation and later timestamp/deep-link where required.
+4. **Finding** — interpretation separated from raw evidence.
+5. **Contradictions/qualifications** — later or independent evidence that changes scope/confidence.
+6. **Decision linkage** — which ADR, roadmap phase, profile, experiment or rejected hypothesis resulted.
+7. **Confidence** — why confidence increased or decreased.
+8. **Negative decisions** — rejected/deferred ideas and the reason they were not promoted.
+9. **Version context** — firmware, platform and device version when capability depends on them.
+10. **Validation status** — research-only, prototype-confirmed, field-tested or supported.
+
 ## Finding ID policy
 
-Source-specific finding IDs use a source prefix where useful:
+- `RL-TP-*` — The Tech Prepper-derived findings.
+- `RL-KM-*` — KM4ACK-specific findings that do not map cleanly to an existing item.
+- `RL-RS-*` — source-neutral RadioLink Research Synthesis findings supported/qualified across multiple independent sources.
 
-- `RL-TP-*` — The Tech Prepper-derived findings;
-- future `RL-KM-*` — KM4ACK-specific findings when they do not map cleanly to existing findings.
+Evidence IDs use:
 
-As evidence matures across multiple sources, important concepts may later receive source-neutral RadioLink requirement or ADR identifiers.
+- `EV-TP-*` — The Tech Prepper evidence;
+- `EV-KM-*` — KM4ACK evidence.
 
 ## Confidence rule
 
@@ -60,13 +95,13 @@ Confidence should increase when:
 - the problem appears repeatedly over time;
 - a workaround requires substantial custom engineering;
 - RadioLink field tests reproduce the same issue;
-- manufacturer or protocol documentation supports the technical constraint.
+- manufacturer/protocol documentation supports the technical constraint.
 
 Confidence should decrease or be qualified when:
 
 - evidence reflects only one operator's preference;
 - later source material reverses an earlier conclusion;
-- the problem is specific to one platform/device version;
+- the problem is specific to one platform/device/firmware version;
 - the proposed solution conflicts with RadioLink's architectural boundaries.
 
 ## Promotion rule
@@ -81,3 +116,7 @@ A research idea can be promoted into the core product only when it has:
 6. a validation plan.
 
 Experimental ideas that fail this test remain in Labs rather than expanding the MVP.
+
+## Current next research action
+
+Deep mine KM4ACK classes A and B, then use targeted searches to catch false negatives in C/D. Promote only findings that survive evidence review into `SYNTHESIS.md` and the product roadmap.
