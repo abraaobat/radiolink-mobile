@@ -77,13 +77,16 @@ Establish product boundaries, cross-platform architecture, repository layout and
 - [x] Define BLE and USB as first-class modern transports rather than application capabilities.
 - [x] Define RadioLink Bridge, RadioLink Profiles, RadioLink Ready and RadioLink Labs as platform tracks/components.
 - [x] Record ADR-0004 for three-path I/O and platform ecosystem.
-- [ ] Select first reference radio/TNC for PoC.
-- [ ] Capture Bluetooth services/characteristics for first BLE reference device.
-- [ ] Select first USB-native reference device/interface path.
+- [x] Record ADR-0005 for Context Providers and layered diagnostics.
+- [x] Create nominal device-registry governance and initial P0 lab profiles.
+- [x] Select the first owned-hardware compatibility PoC path: macOS CLI + DigiRig + Quansheng UV-K1/UV-K5 + software TNC.
+- [ ] Acquire/borrow and validate the first direct BLE KISS reference device; BTECH UV-Pro is the current P1 candidate.
+- [ ] Capture Bluetooth services/characteristics for the first BLE reference device.
+- [ ] Select the first USB-native reference device/interface path.
 - [ ] Define KISS/AX.25/APRS packet fixtures.
 
 ### Exit criteria
-A developer can clone the repository and understand the platform targets, mission UX, three I/O paths, shared-core strategy, first hardware candidates and first technical spike.
+A developer can clone the repository and understand the platform targets, mission UX, three I/O paths, shared-core strategy, context-provider model, device registry, first owned-hardware PoC and modern reference candidates.
 
 ---
 
@@ -102,19 +105,25 @@ Create the platform-neutral core and capability model used by all hosts so servi
 - [ ] Stable `RadioDevice` abstraction.
 - [ ] Complete capability schema.
 - [ ] Explicit `Transport` model: BLE / USB / serial / audio / network where applicable.
-- [ ] Device Registry.
+- [ ] Multi-transport capability composition for one logical `RadioDevice`.
+- [ ] Runtime Device Registry.
 - [ ] Capability Registry.
 - [ ] Transport Manager interface.
 - [ ] TNC/Modem Provider interface.
+- [ ] Context Provider Registry.
+- [ ] `LocationProvider` abstraction.
+- [ ] `TimeProvider` abstraction.
+- [ ] Context-provider quality/precedence/selection policy.
 - [ ] Operations Engine skeleton.
 - [ ] Resource lifecycle model.
 - [ ] Connection/session/recovery state machine.
+- [ ] Layered diagnostic-state model: physical/power → transport → logical interface → capability → provider → protocol → service readiness.
 - [ ] Operational mode/service registry model.
 - [ ] Shared fixture/test harness.
 - [ ] Host-facing API boundary for future FFI.
 
 ### Exit criteria
-Core logic runs in tests without Android/iOS/Linux/macOS-specific Bluetooth or USB APIs and services can resolve a generic provider/transport path through the Operations Engine.
+Core logic runs in tests without Android/iOS/Linux/macOS-specific Bluetooth or USB APIs; services resolve generic transport/TNC/context providers through the Operations Engine; and failures can be represented at the correct diagnostic layer.
 
 ---
 
@@ -134,13 +143,14 @@ Discover, connect and maintain reliable sessions with Bluetooth/BLE radios/TNCs 
 - [ ] Automatic reconnect behavior.
 - [ ] Session restoration after reconnect.
 - [ ] Human-readable error states.
+- [ ] Layered reporting for pairing → service discovery → capability match → provider readiness.
 - [ ] Raw RX/TX diagnostics.
 - [ ] First reference driver.
 - [ ] Desktop/macOS implementation first.
 - [ ] Mobile adapters after core validation.
 
 ### Exit criteria
-RadioLink can connect to the reference BLE device, exchange raw data reliably, recover a dropped session and correctly distinguish control/audio/KISS/TNC capabilities.
+RadioLink can connect to the reference BLE device, exchange raw data reliably, recover a dropped session and correctly distinguish control/audio/KISS/TNC capabilities with a specific failure layer when unavailable.
 
 ---
 
@@ -196,6 +206,7 @@ Use desktop as a full validation environment after CLI/core spikes, without chan
 - [ ] Mission/action launcher.
 - [ ] Device/capability connection screen.
 - [ ] Pipeline diagnostic view.
+- [ ] Context/location-provider state view.
 - [ ] KISS monitor.
 - [ ] APRS receive view.
 - [ ] Basic APRS transmit.
@@ -205,7 +216,7 @@ Use desktop as a full validation environment after CLI/core spikes, without chan
 - [ ] Validate at least one software-TNC/audio path using DigiRig or equivalent.
 
 ### Exit criteria
-A desktop user can complete APRS RX/TX from one RadioLink service through more than one transport/provider path.
+A desktop user can complete APRS RX/TX from one RadioLink service through more than one transport/provider path and inspect the resolved diagnostic/context pipeline.
 
 ---
 
@@ -227,13 +238,18 @@ Expose the shared core on macOS/Linux through terminal workflows and use the CLI
 - [ ] `radiolink capabilities`.
 - [ ] `radiolink transports`.
 - [ ] `radiolink pipeline`.
+- [ ] `radiolink diagnose`.
+- [ ] `radiolink context`.
 - [ ] Real BLE device discovery.
 - [ ] Real USB device discovery.
+- [ ] Real USB audio/serial interface enumeration for DigiRig-class hardware.
+- [ ] Display selected/available Location/Time Providers.
+- [ ] Display layered diagnostic stage and human-readable failure reason.
 - [ ] Real KISS monitor.
 - [ ] Operations Engine integration.
 
 ### Exit criteria
-Core radio diagnostics and Packet/APRS operations can run without a GUI and reveal the resolved device → transport → provider → protocol pipeline.
+Core radio diagnostics and Packet/APRS operations can run without a GUI and reveal the resolved device → transport → provider → protocol/service pipeline plus active context providers and the highest verified diagnostic stage.
 
 ---
 
@@ -247,13 +263,14 @@ Core radio diagnostics and Packet/APRS operations can run without a GUI and reve
 - [ ] Last-heard state.
 - [ ] Local persistence.
 - [ ] Position beacon TX.
+- [ ] `LocationProvider` integration for beacon/position workflows.
 - [ ] Chat-like APRS messaging.
 - [ ] ACK/REJ handling.
 - [ ] Mission-first actions: message / position / stations.
 - [ ] Provider/transport independence.
 
 ### Exit criteria
-APRS is a coherent service regardless of whether frames come from an embedded TNC, external BLE/USB KISS TNC or software TNC/audio path.
+APRS is a coherent service regardless of whether frames come from an embedded TNC, external BLE/USB KISS TNC or software TNC/audio path, and position workflows can use an appropriate context provider independent of the radio transport.
 
 ---
 
@@ -285,6 +302,7 @@ A user can conduct a practical connected-mode session through a supported provid
 - [ ] Shared state with APRS/Packet services.
 - [ ] Support control-only Bluetooth devices without falsely marking them as Packet-capable.
 - [ ] Support CAT from one transport while data/TNC uses another where possible.
+- [ ] Preserve mixed-transport capability composition under one logical device identity.
 
 ### Exit criteria
 Richer radios expose control without making control mandatory for simpler TNCs, and mixed-transport capability composition is represented accurately.
@@ -305,6 +323,8 @@ Bring the proven core/operations/device architecture to Android.
 - [ ] USB host/device access where practical.
 - [ ] Permissions.
 - [ ] Location/background policy.
+- [ ] Host `LocationProvider` adapter.
+- [ ] Context-provider selection/state UX where relevant.
 - [ ] Mission/action launcher.
 - [ ] APRS/Packet parity baseline.
 - [ ] Capability-aware device screen.
@@ -312,7 +332,7 @@ Bring the proven core/operations/device architecture to Android.
 - [ ] Beta distribution build.
 
 ### Exit criteria
-Android completes the supported core workflows validated by CLI/desktop and can use at least one direct BLE path.
+Android completes the supported core workflows validated by CLI/desktop, can use at least one direct BLE path and can provide host location through the shared context-provider API.
 
 ---
 
@@ -326,6 +346,8 @@ Android completes the supported core workflows validated by CLI/desktop and can 
 - [ ] CoreBluetooth adapter.
 - [ ] Supported wired accessory/USB strategy assessment.
 - [ ] Background/location behavior.
+- [ ] Host `LocationProvider` adapter.
+- [ ] Context-provider selection/state UX where relevant.
 - [ ] Mission/action launcher.
 - [ ] APRS/Packet parity baseline.
 - [ ] Capability-aware device screen.
@@ -333,7 +355,7 @@ Android completes the supported core workflows validated by CLI/desktop and can 
 - [ ] TestFlight build.
 
 ### Exit criteria
-iPhone completes the same supported core workflows within iOS transport/background constraints.
+iPhone completes the same supported core workflows within iOS transport/background constraints and provides host location through the shared context-provider API.
 
 ---
 
@@ -357,7 +379,7 @@ A supported host/radio combination completes a practical Winlink Packet exchange
 
 ## F13 — Driver SDK + RadioLink Profiles / Compatibility Registry
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 ### Goal
 Make hardware support capability-driven and capture known-good radio/interface/cable combinations.
@@ -367,12 +389,16 @@ Make hardware support capability-driven and capture known-good radio/interface/c
 - [ ] Capability schema documentation.
 - [ ] Transport schema documentation.
 - [ ] Driver test harness.
-- [ ] Device profile template.
+- [x] Device profile documentation template.
 - [x] Initial compatibility matrix document.
-- [ ] Profile fields for radio firmware, interface and cable.
-- [ ] Audio RX/TX calibration fields.
-- [ ] PTT method fields.
-- [ ] Known-good platform/mode validation state.
+- [x] Nominal P0/P1/P2/watchlist device registry.
+- [x] Initial P0 lab profiles for UV-K1 2 MB, UV-K5 V3, UV-5 Mini and QYT KT-7900D.
+- [x] Document profile fields for firmware/version, interface/cable, required radio-side settings, validation state and evidence.
+- [ ] Runtime profile schema/loader.
+- [ ] Audio RX/TX calibration tooling/fields in runtime schema.
+- [ ] PTT method representation in runtime schema.
+- [ ] Known-good platform/mode validation state in runtime schema.
+- [ ] Context-provider compatibility/profile fields.
 - [ ] Per-device capability flags:
   - [ ] Bluetooth.
   - [ ] USB.
@@ -383,10 +409,11 @@ Make hardware support capability-driven and capture known-good radio/interface/c
   - [ ] Serial/data transport.
   - [ ] KISS.
   - [ ] Embedded TNC.
-  - [ ] GPS.
+  - [ ] Radio GPS/GNSS source exposure.
   - [ ] telemetry.
 - [ ] Tested-platform matrix: Android / iOS / Linux / macOS.
 - [ ] Supported-service matrix: APRS / Packet / Winlink / Radio Control / diagnostics.
+- [ ] Profile promotion tooling/state transitions: RESEARCHED → CANDIDATE → LAB_AVAILABLE → CONNECTED → RX_VERIFIED → TX_VERIFIED → PROFILE_VERIFIED → SUPPORTED.
 - [ ] Contribution guide.
 - [ ] Future community profile submission workflow design.
 
@@ -395,12 +422,22 @@ Make hardware support capability-driven and capture known-good radio/interface/c
 - [ ] Class B — Embedded USB KISS/TNC radio/interface.
 - [ ] Class C — External BLE/USB KISS TNC.
 - [ ] Class D — DigiRig/USB audio + software TNC.
-- [ ] Class E — Bluetooth CAT-only radio.
-- [ ] Class F — Multi-transport radio with different capabilities per transport.
+- [ ] Class E — Bluetooth CAT/control only.
+- [ ] Class F — Bluetooth audio + PTT software-TNC candidate.
+- [ ] Class G — Multi-transport/composite device.
 - [ ] RadioLink Bridge.
 
+### Nominal reference targets
+
+- **P0 / lab available:** Quansheng UV-K1 2 MB, Quansheng UV-K5 V3, Baofeng UV-5 Mini, QYT KT-7900D, DigiRig Mobile.
+- **P1 / modern reference candidates:** BTECH UV-Pro, VGC/Vero VR-N76 family, Kenwood TH-D75.
+- **P2 / boundary reference:** Retevis Ailunce HA2.
+- **Watchlist:** Radtel RT-660, Baofeng DM-UV32.
+
+See `docs/devices/REGISTRY.md` for current state and support rules.
+
 ### Exit criteria
-A contributor can describe a radio accurately by capabilities/transports and add support without modifying APRS/Packet core logic.
+A contributor can describe a radio accurately by capabilities/transports/context requirements and add support without modifying APRS/Packet core logic; support state is traceable to exact bench evidence.
 
 ---
 
@@ -418,9 +455,11 @@ Implement the USB-C/USB path and support conventional radios where native digita
 - [ ] USB Audio.
 - [ ] Multi-interface USB devices.
 - [ ] Platform-specific USB integration.
+- [ ] Layered USB diagnostics: power/visibility → enumeration → interface discovery → capability/provider readiness.
 
 ### Legacy / Analog Bridge candidates
 - [ ] DigiRig-class USB audio/PTT.
+- [ ] Validate the first owned P0 path using DigiRig + UV-K1/UV-K5.
 - [ ] Direwolf as a default desktop software TNC provider for AX.25/APRS/Packet where appropriate.
 - [ ] External software TNC/modem provider interface.
 - [ ] Serial CAT interfaces.
@@ -431,7 +470,7 @@ Implement the USB-C/USB path and support conventional radios where native digita
 BLE, USB and audio/PTT are independent transport/provider paths. No service may bind directly to one of them.
 
 ### Exit criteria
-The same APRS service can operate through a wired digital KISS path and a conventional audio/software-TNC path without service-level changes.
+The same APRS service can operate through a wired digital KISS path and a conventional audio/software-TNC path without service-level changes, with failures reported at the correct transport/provider layer.
 
 ---
 
@@ -479,6 +518,7 @@ Define a future open, documented interoperability profile for radios and accesso
 - [ ] KISS/serial over USB guidance.
 - [ ] CAT/control capability description.
 - [ ] PTT/GPS/battery/telemetry capability description.
+- [ ] Context-provider capability/source description where relevant.
 - [ ] Reference implementation using RadioLink Bridge.
 - [ ] Conformance test concept.
 - [ ] Manufacturer/community documentation.
@@ -501,16 +541,22 @@ Continuously mine real-world workflows, open-source projects and technical creat
 ### Current research sources / methods
 - [x] Create YouTube corpus builder with timestamped transcripts.
 - [x] Build complete The Tech Prepper corpus for research.
-- [ ] Complete KM4ACK corpus and cross-source validation.
-- [ ] Record structured findings with source/video/timestamp/evidence.
-- [ ] Maintain problem → workaround → opportunity map.
+- [x] Complete KM4ACK corpus and deep cross-source validation.
+- [x] Record structured findings with source/video/evidence.
+- [x] Maintain problem → workaround → opportunity map.
+- [x] Create source-neutral synthesis findings through `RL-RS-018`.
+- [x] Create Research Promotion Register linking findings to ADR/roadmap/implementation/validation state.
+- [ ] Import timestamp/deep-link segment evidence for findings promoted into implementation/conformance requirements.
+- [ ] Add manufacturer/protocol documentation as a third evidence class for device-specific claims.
 
 ### Labs candidates
 - [ ] Winlink/Mercury modem-provider experiments.
 - [ ] Reticulum.
 - [ ] LoRa.
 - [ ] Modern BBS/store-and-forward messaging.
-- [ ] Offline radio knowledge assistant.
+- [ ] Future delivery-independent Messaging Service experiments.
+- [ ] Offline radio knowledge assistant / optional Data Services.
+- [ ] Field readiness/self-test/exercise tooling.
 - [ ] Field power/telemetry integrations.
 - [ ] Additional digital modes.
 
@@ -518,7 +564,7 @@ Continuously mine real-world workflows, open-source projects and technical creat
 Labs experiments must not become mandatory dependencies of RadioLink Core or the MVP until product value and architecture fit are demonstrated.
 
 ### Exit criteria
-Research findings can be promoted deliberately into ADRs, requirements, Profiles, Bridge work or future product modules with traceable evidence.
+Research findings can be promoted deliberately through `PROMOTION-REGISTER.md` into ADRs, requirements, Profiles, Bridge work or future product modules with traceable evidence and validation status.
 
 ---
 
@@ -534,14 +580,19 @@ Host platforms
 └── at least one mobile host (Android or iOS)
 
 I/O paths
-├── one direct modern digital path (BLE KISS preferred for first PoC)
+├── one direct modern digital path (BLE KISS)
+├── one wired/USB path
 └── one legacy/audio compatibility path
+
+Context/diagnostics
+├── at least one host LocationProvider
+└── layered transport→service diagnostics
 
 Protocol/service
 └── APRS RX/TX + messaging baseline
 ```
 
-USB-native digital support is an official platform path and should be developed/validated early enough that it does not become an afterthought, even if BLE/KISS remains the shortest first hardware PoC.
+USB-native digital support is an official platform path and should be developed/validated early enough that it does not become an afterthought. The owned-hardware DigiRig path is now the first executable bench slice because the current lab does not yet contain a direct BLE KISS radio.
 
 ---
 
@@ -591,25 +642,28 @@ F17 Labs / Research runs continuously in parallel.
 
 # Immediate next action
 
-The next engineering step remains a small, real hardware vertical slice:
+The next engineering step is now an owned-hardware vertical slice on macOS:
 
-1. select the first **BLE KISS radio/TNC** reference device;
-2. capture its Bluetooth services/characteristics;
-3. define real KISS/AX.25/APRS fixtures;
-4. connect the real transport to the Rust transport/provider abstraction and `radiolink-cli`;
-5. define the parallel compatibility baseline with a conventional radio + DigiRig/software TNC;
-6. identify one USB-native device/interface candidate for the Wired Digital path.
+1. use **DigiRig Mobile + Quansheng UV-K1 2 MB** as the first P0 radio/interface pair;
+2. enumerate the DigiRig USB audio/serial interfaces from `radiolink-cli` and expose layered diagnostics;
+3. establish RX audio/PTT path and a software-TNC provider;
+4. carry real KISS/AX.25 data into the shared core;
+5. capture and decode live APRS RX, then perform a controlled APRS TX validation;
+6. update the UV-K1 profile with exact firmware, cable, settings, calibration and evidence;
+7. reproduce the path with UV-K5 V3 as the second P0 profile;
+8. in parallel, acquire/borrow a **BTECH UV-Pro** or another validated BLE KISS reference for F2;
+9. identify one USB-native digital device/interface candidate for the direct Wired Digital path.
 
-Preferred shortest first PoC:
+Current first PoC:
 
 ```text
-macOS CLI ↔ BLE KISS ↔ Radio/TNC ↔ RF
+macOS CLI ↔ USB/DigiRig ↔ audio/PTT ↔ software TNC ↔ UV-K1 ↔ RF
 ```
 
-Compatibility baseline:
+Parallel modern BLE target:
 
 ```text
-macOS CLI ↔ software TNC ↔ USB audio/PTT ↔ DigiRig ↔ conventional radio ↔ RF
+macOS CLI ↔ BLE KISS ↔ BTECH UV-Pro (candidate) ↔ RF
 ```
 
 Planned modern wired validation:
