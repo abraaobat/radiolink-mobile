@@ -1,43 +1,26 @@
 # RadioLink Platform
 
-**Cross-platform, Bluetooth-first amateur radio application hub.**
+**Cross-platform amateur-radio platform for smartphones and computers, with BLE, USB and legacy audio/PTT support.**
 
-RadioLink is an open-source platform for Android, iOS, Linux and macOS that connects computers and smartphones directly to amateur radios/TNCs, preferably through Bluetooth/BLE.
+RadioLink is an open-source platform for Android, iOS, Linux and macOS that turns the user's existing phone or computer into the main computing and interaction layer for digital radio operation.
 
-> **Device = computer. Radio = RF. Bluetooth = preferred bridge.**
+> **Host = computer. Radio = RF. RadioLink resolves the path in between.**
 
 ## Why
 
-The value of DigiPi is not only running individual radio applications; it is the convenience of gathering several functions in one place and switching between them easily. RadioLink keeps that idea, but removes the requirement for a Raspberry Pi/Linux appliance when the user's phone or computer can run the radio stack directly.
+Amateur-radio digital modes are powerful, but real-world operation is fragmented across radios, TNCs, Bluetooth, USB, sound cards, PTT, CAT, software modems and protocol-specific applications.
 
-RadioLink aims to provide one consistent hub for:
+RadioLink's goal is not to add another isolated radio application. It provides one capability-driven platform where the user thinks in terms of actions such as:
 
-- APRS
-- Packet / AX.25
-- Winlink
-- KISS diagnostics
-- radio control
-- SSTV and other future digital-mode modules
+- send a message;
+- share position;
+- send e-mail;
+- view stations;
+- open a Packet terminal;
+- inspect diagnostics;
+- control the radio where supported.
 
-The normal user experience should look like one product with selectable modules, not a collection of daemons and configuration files.
-
-## Reference projects
-
-RadioLink uses external projects as engineering references with clearly separated roles:
-
-- **DigiPi** — functional coverage and App Hub benchmark.
-- **Mobilinkd TNC4** — BLE KISS TNC / portable radio-interface benchmark.
-- **HTCommander** — Bluetooth radio integration, device-control and driver/protocol reference.
-
-These are references, not runtime dependencies or wholesale architectural templates.
-
-See [Technical References](docs/REFERENCES.md) and [DigiPi 2.2-1 → RadioLink Functional Benchmark](docs/DIGIPI-BENCHMARK.md).
-
-## DigiPi functional benchmark
-
-DigiPi 2.2-1 is used as a **functional coverage benchmark**, not as an architectural template. RadioLink tracks which useful DigiPi operations should become native modules, integrations, later-phase features or intentionally omitted appliance-management functions.
-
-See [DigiPi 2.2-1 → RadioLink Functional Benchmark](docs/DIGIPI-BENCHMARK.md).
+The platform decides which device, transport, TNC/modem provider and protocol stack can satisfy that operation.
 
 ## Target platforms
 
@@ -45,6 +28,90 @@ See [DigiPi 2.2-1 → RadioLink Functional Benchmark](docs/DIGIPI-BENCHMARK.md).
 - iOS
 - Linux desktop/headless
 - macOS desktop/headless
+
+Development is **CLI-first on macOS/Linux** for fast validation of transports, protocols and the Operations Engine, but the product architecture remains cross-platform.
+
+## The three official I/O paths
+
+### 1. Wireless Digital — Bluetooth/BLE
+
+For cable-free mobile operation, KISS/data, control and telemetry where the radio/TNC exposes documented usable capabilities.
+
+```text
+Host ↔ BLE ↔ Radio/TNC ↔ RF
+```
+
+### 2. Wired Digital — USB-C/USB
+
+For robust wired operation. A device may expose KISS, serial/CAT, USB Audio or other logical interfaces over USB.
+
+```text
+Host ↔ USB-C/USB ↔ Radio/TNC ↔ RF
+```
+
+### 3. Legacy / Analog Bridge — audio + PTT + optional CAT
+
+For the large installed base of conventional radios using DigiRig-class interfaces, software TNC/modem providers or the future RadioLink Bridge.
+
+```text
+Host ↔ software TNC/modem ↔ USB audio/PTT ↔ Radio ↔ RF
+```
+
+Bluetooth and USB are **transports**, not automatic Packet/APRS capabilities. RadioLink always models what a device actually exposes.
+
+## Platform family
+
+```text
+RadioLink Platform
+│
+├── RadioLink Applications
+│   ├── Android
+│   ├── iOS
+│   ├── Linux/macOS
+│   └── CLI/headless
+│
+├── RadioLink Core
+│   ├── Operations Engine
+│   ├── Capability Registry
+│   ├── Device Registry
+│   ├── Transport Manager
+│   ├── TNC/Modem Providers
+│   └── Protocol/Service Core
+│
+├── RadioLink Profiles
+│   └── tested radios / cables / interfaces / settings
+│
+├── RadioLink Bridge
+│   └── future BLE + USB-C adapter/TNC for conventional radios
+│
+├── RadioLink Ready
+│   └── future interoperability profile/specification
+│
+└── RadioLink Labs
+    └── Winlink/Mercury, Reticulum, LoRa, BBS and other research
+```
+
+## Architecture
+
+```text
+User action / Application UX
+            ↓
+     Operational Service
+            ↓
+          Protocol
+            ↓
+    TNC / Modem Provider
+            ↓
+     Transport Manager
+       /      |       \
+     BLE     USB    Audio/PTT
+       \      |       /
+          Device
+            ↓
+            RF
+```
+
+No APRS, Packet or Winlink service should depend directly on Bluetooth, USB, Direwolf, one radio model or one TNC implementation.
 
 ## Shared Core toolchain
 
@@ -60,52 +127,31 @@ The shared protocol/domain core is implemented in **Rust**.
 - Swift host layer on iOS
 - native Linux/macOS adapters for Bluetooth/USB and desktop integration
 
-Platform-specific Bluetooth, UI, location, permissions and background behavior remain outside the Rust core.
+Platform-specific Bluetooth, USB, UI, location, permissions and background behavior remain outside the Rust core.
 
-## Transport strategy
+## Initial service set
 
-1. Bluetooth/BLE radio or embedded KISS TNC — preferred.
-2. Bluetooth KISS TNC attached to a conventional radio.
-3. USB/audio interfaces where needed.
-4. Optional RadioLink Bridge for legacy radios.
+- APRS
+- Packet / AX.25
+- KISS diagnostics
+- Radio Control
+- Winlink after the Packet path is stable
 
-## Architecture
+Future research/modules stay in Labs until they justify promotion into the product core.
 
-```text
-Android / iOS / Linux / macOS
-              │
-        RadioLink Shell
-              │
- ┌────────────┼──────────────┐
- │            │              │
-APRS        Packet         Winlink
- │            │              │
- └────── Rust Shared Core ────┘
-              │
-      Protocols + Drivers
-              │
-      Bluetooth / USB
-              │
-        Radio / TNC
-              │
-             RF
-```
+## Reference projects
 
-## App Hub principle
+RadioLink uses external projects as engineering references with clearly separated roles:
 
-The home screen should make each function easy to select:
+- **DigiPi** — functional coverage and integrated-operation benchmark.
+- **Mobilinkd TNC4** — BLE KISS TNC / portable radio-interface benchmark.
+- **HTCommander** — Bluetooth radio integration, device-control and driver/protocol reference.
+- **EmComm Tools / ETC** — operational-mode orchestration, lifecycle and zero-configuration reference.
+- **Mercury** — example of a modem/provider implementation that benefits from a compatible, decoupled interface.
 
-```text
-RAD IOLINK
+These are references, not runtime dependencies or wholesale architectural templates.
 
-● Radio connected
-
-[ APRS ]    [ WINLINK ]
-[ PACKET ]  [ SSTV ]
-[ KISS ]    [ RADIO ]
-```
-
-Protocol details remain available for diagnostics, but they should not dominate the normal workflow.
+See [Technical References](docs/REFERENCES.md) and [DigiPi 2.2-1 → RadioLink Functional Benchmark](docs/DIGIPI-BENCHMARK.md).
 
 ## Repository
 
@@ -125,21 +171,32 @@ radiolink-mobile/
 │   ├── radiolink-tnc/
 │   └── radiolink-drivers/
 ├── tools/
-│   └── radiolink-cli/
+│   ├── radiolink-cli/
+│   └── research/
 ├── hardware/
 │   └── bridge/
 ├── docs/
 └── tests/
 ```
 
-The repository keeps its current GitHub name for continuity; the product name is now **RadioLink Platform**.
+The repository keeps its current GitHub name for continuity; the product umbrella is **RadioLink Platform**.
 
 ## Current phase
 
-**F0 — Platform Foundation**
+**F0/F1 — Platform Foundation + Shared Core/Operations abstractions**
 
-The shared-core language/toolchain decision is complete: **Rust**. See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [Technical References](docs/REFERENCES.md), [DigiPi Benchmark](docs/DIGIPI-BENCHMARK.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), ADR-0002 and [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md).
+The Rust shared core and CLI bootstrap are in place. The immediate engineering path is to prove a real hardware vertical slice through the common abstractions:
 
-## Status
+```text
+macOS CLI ↔ BLE KISS ↔ Radio/TNC ↔ RF
+```
 
-Early architecture / proof-of-concept stage. The Rust workspace, TNC abstraction, capability model, initial KISS encoder and CLI bootstrap are now in place. The next technical path is to use macOS as the first desktop reference host, implement real Bluetooth discovery, select the first reference Bluetooth KISS radio/TNC and prove a real RX/TX path through the shared core.
+with a parallel compatibility baseline:
+
+```text
+macOS CLI ↔ software TNC ↔ DigiRig/USB audio/PTT ↔ conventional radio ↔ RF
+```
+
+and early validation of a USB-native digital path.
+
+See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [Technical References](docs/REFERENCES.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), [ADR-0002](docs/adr/ADR-0002-cross-platform-app-hub.md), [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md) and [ADR-0004](docs/adr/ADR-0004-three-path-io-and-platform-ecosystem.md).
