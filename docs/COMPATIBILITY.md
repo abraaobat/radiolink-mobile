@@ -6,6 +6,14 @@ RadioLink classifies radios and interfaces by **actual exposed transports and ca
 
 A connection type alone does not imply Packet, APRS, KISS, TNC, CAT or audio support.
 
+Specific radios and interfaces are tracked separately in the nominal device registry:
+
+- [`devices/REGISTRY.md`](devices/REGISTRY.md)
+- [`devices/README.md`](devices/README.md)
+- [`devices/profiles/`](devices/profiles/)
+
+Being listed in the nominal registry is not a support claim.
+
 ## Official I/O families
 
 ```text
@@ -41,11 +49,13 @@ Capabilities
 [ ] Serial/data transport
 [ ] KISS
 [ ] Embedded TNC
-[ ] GPS
+[ ] Radio GPS/GNSS source exposure
 [ ] Telemetry
 [ ] USB audio
 [ ] USB serial/CAT
 ```
+
+Location/time used by an application are modeled separately through Context Providers. A radio may expose GPS/GNSS data, but `location` is not assumed to be owned by the radio.
 
 ## Compatibility classes
 
@@ -134,12 +144,12 @@ This must be validated per radio/platform and should not be assumed from the pre
 Modern radios may expose different capabilities over different transports.
 
 ```text
-               ┌─ BLE → CAT / telemetry
+               ┌─ BLE → KISS / CAT / telemetry
 Host / RadioLink
-               └─ USB-C → KISS / Audio / CAT
+               └─ USB-C → GPS / KISS / Audio / CAT
 ```
 
-RadioLink should compose these capabilities through the Device Registry, Capability Registry and Transport Manager rather than forcing the device into a single transport class.
+RadioLink should compose these capabilities through the Device Registry, Capability Registry, Context Provider Registry and Transport Manager rather than forcing the device into a single transport class.
 
 ## TNC/Modem Provider mapping
 
@@ -153,13 +163,44 @@ RadioLink should compose these capabilities through the Device Registry, Capabil
 | Bluetooth audio/PTT radio | host if viable | Software TNC / experimental |
 | RadioLink Bridge + conventional radio | Bridge | Hardware/embedded provider over BLE or USB-C |
 
+## Context Provider mapping
+
+Operational context is separate from radio transport/capability.
+
+```text
+LocationProvider
+├── Host/smartphone location
+├── Radio GPS/GNSS
+├── USB GPS
+├── Network/GPSD
+└── Manual/static
+
+TimeProvider
+├── System clock
+├── GPS/GNSS time
+├── Network time when available
+└── other validated provider
+```
+
+A workflow may therefore combine:
+
+```text
+BLE → KISS/TNC
+USB → GPS
+Host OS → location fallback / time
+```
+
+without treating those sources as one physical interface.
+
 ## RadioLink Profile requirements
 
 Every device/profile should document, where applicable:
 
 - manufacturer;
-- model;
-- firmware;
+- model and hardware revision;
+- firmware version/range;
+- validation state;
+- tested RadioLink/host version;
 - transport(s);
 - Bluetooth profile/service identifiers where known;
 - USB interface classes where known;
@@ -168,13 +209,41 @@ Every device/profile should document, where applicable:
 - PTT mechanism;
 - KISS availability;
 - embedded TNC availability;
-- GPS/telemetry availability;
+- radio GPS/GNSS/telemetry exposure;
 - cable/interface requirements;
+- required radio-side settings/preflight recipe;
 - audio RX/TX calibration;
 - tested host platforms;
-- supported RadioLink services;
-- verified workflows;
+- supported/verified RadioLink services;
+- layered diagnostic result;
+- test evidence;
 - limitations/quirks.
+
+The canonical template is [`devices/PROFILE-TEMPLATE.md`](devices/PROFILE-TEMPLATE.md).
+
+## Device validation states
+
+Nominal devices advance through:
+
+```text
+RESEARCHED
+   ↓
+CANDIDATE
+   ↓
+LAB_AVAILABLE
+   ↓
+CONNECTED
+   ↓
+RX_VERIFIED
+   ↓
+TX_VERIFIED
+   ↓
+PROFILE_VERIFIED
+   ↓
+SUPPORTED
+```
+
+Success in one device + firmware + host + transport + provider + service combination does not automatically validate another.
 
 ## Runtime rules
 
@@ -182,11 +251,14 @@ Every device/profile should document, where applicable:
 2. USB presence never implies a specific logical interface.
 3. A device may expose capabilities on multiple transports.
 4. Capabilities may be composed, for example CAT over BLE and KISS/audio over USB.
-5. Services such as APRS/Packet/Winlink consume provider abstractions and must not bind directly to a compatibility class.
-6. Known-good Profiles supplement, but do not replace, runtime capability discovery when discovery is technically possible.
+5. Context may come from a different source/transport than RF/TNC capability.
+6. Services such as APRS/Packet/Winlink consume provider abstractions and must not bind directly to a compatibility class.
+7. Known-good Profiles supplement, but do not replace, runtime capability discovery when discovery is technically possible.
+8. Firmware and required radio-side configuration are part of the capability-validation context.
+9. RadioLink should report the highest verified diagnostic layer rather than collapsing every problem into a service-level error.
 
 ## Rule of thumb
 
-> **Transport tells RadioLink how it may connect. Capabilities tell RadioLink what it can actually do.**
+> **Transport tells RadioLink how it may connect. Capabilities tell RadioLink what it can actually do. Context Providers tell services where operational data such as location/time comes from.**
 
 RadioLink must never infer one from the other.
