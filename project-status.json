@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "projectId": "radiolink-mobile",
+  "updatedAt": "2026-09-08T22:45:00-04:00",
+  "status": "Em construção",
+  "statusClass": "build",
+  "progress": 28,
+  "roadmap": "F0–F12",
+  "current": "F0/F1: shared Rust core and CLI bootstrap are in place; Operations abstractions and the first real hardware vertical slice are the immediate engineering focus.",
+  "architecture": "User action → Operational Service → Protocol → TNC/Modem Provider → Transport Manager → Device → RF",
+  "next": "Prove a real hardware vertical slice through the shared abstractions: macOS CLI ↔ BLE KISS ↔ Radio/TNC ↔ RF, with the software-TNC + DigiRig path kept as a compatibility baseline.",
+  "action": "Validate the first real KISS/AX.25/APRS path end to end through the common RadioLink abstractions.",
+  "subprojects": [
+    "CLI/headless",
+    "Operations Engine",
+    "Capability Registry",
+    "KISS",
+    "AX.25/APRS",
+    "BLE / USB / Audio-PTT",
+    "RadioLink Bridge"
+  ],
+  "activity": {
+    "date": "2026-09-08",
+    "type": "architecture",
+    "text": "RadioLink publishes its machine-readable project status; current phase remains F0/F1 with the next gate focused on a real hardware vertical slice."
+  }
+}
