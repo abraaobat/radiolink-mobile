@@ -1,8 +1,8 @@
 use radiolink_aprs::{
-    AprsMessage, AprsMessageKind, AprsPacket, encode_packet, parse_ax25_ui_frame,
+    encode_packet, parse_ax25_ui_frame, AprsMessage, AprsMessageKind, AprsPacket,
 };
 use radiolink_ax25::{Ax25Address, Ax25UiFrame};
-use radiolink_kiss::{StreamingDecoder, encode_data_frame};
+use radiolink_kiss::{encode_data_frame, StreamingDecoder};
 
 fn address(callsign: &str, ssid: u8) -> Ax25Address {
     Ax25Address::new(callsign, ssid).expect("valid test address")
