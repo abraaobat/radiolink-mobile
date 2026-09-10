@@ -1,27 +1,27 @@
 {
   "schemaVersion": 1,
   "projectId": "radiolink-mobile",
-  "updatedAt": "2026-09-08T22:45:00-04:00",
-  "status": "Em construção",
+  "updatedAt": "2026-09-09T22:31:00-04:00",
+  "status": "F3 KISS core em construção",
   "statusClass": "build",
-  "progress": 28,
-  "roadmap": "F0–F12",
-  "current": "F0/F1: shared Rust core and CLI bootstrap are in place; Operations abstractions and the first real hardware vertical slice are the immediate engineering focus.",
-  "architecture": "User action → Operational Service → Protocol → TNC/Modem Provider → Transport Manager → Device → RF",
-  "next": "Prove a real hardware vertical slice through the shared abstractions: macOS CLI ↔ BLE KISS ↔ Radio/TNC ↔ RF, with the software-TNC + DigiRig path kept as a compatibility baseline.",
-  "action": "Validate the first real KISS/AX.25/APRS path end to end through the common RadioLink abstractions.",
+  "progress": 32,
+  "roadmap": "F0–F17 • F3 ativo",
+  "current": "F0/F1 foundation remains active and F3 advanced: KISS encoding, decoding, reserved-byte handling, stateful streaming parsing and fragmented transport chunks are implemented. Rust workspace CI now validates fmt, clippy and tests on GitHub.",
+  "architecture": "User action → Operational Service → Protocol → TNC/Modem Provider → KISS → Transport Manager → Device → RF",
+  "next": "Add captured KISS/AX.25 packet fixtures and advance AX.25 UI-frame parsing, then connect the first software-TNC/DigiRig or direct KISS transport without coupling the protocol core to hardware.",
+  "action": "Build deterministic packet fixtures and the next AX.25/APRS decode slice before the physical transport validation.",
   "subprojects": [
     "CLI/headless",
     "Operations Engine",
     "Capability Registry",
-    "KISS",
+    "KISS encoder/decoder/streaming ✓",
     "AX.25/APRS",
     "BLE / USB / Audio-PTT",
     "RadioLink Bridge"
   ],
   "activity": {
-    "date": "2026-09-08",
-    "type": "architecture",
-    "text": "RadioLink publishes its machine-readable project status; current phase remains F0/F1 with the next gate focused on a real hardware vertical slice."
+    "date": "2026-09-09",
+    "type": "implementation",
+    "text": "F3 advanced with KISS decoder, streaming parser, fragmented-frame handling and workspace CI; physical transport and RF validation remain pending."
   }
 }
