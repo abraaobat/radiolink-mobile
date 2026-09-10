@@ -111,9 +111,7 @@ fn parse_status(information: &[u8]) -> Result<AprsStatus, AprsError> {
 
 fn is_dhm_timestamp(value: &str) -> bool {
     let bytes = value.as_bytes();
-    bytes.len() == 7
-        && bytes[..6].iter().all(u8::is_ascii_digit)
-        && matches!(bytes[6], b'z' | b'Z')
+    bytes.len() == 7 && bytes[..6].iter().all(u8::is_ascii_digit) && matches!(bytes[6], b'z' | b'Z')
 }
 
 fn parse_message(information: &[u8]) -> Result<AprsMessage, AprsError> {
@@ -169,9 +167,7 @@ fn split_message_id(body: &str) -> (&str, Option<String>) {
 }
 
 fn is_message_id(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 5
-        && value.bytes().all(|byte| byte.is_ascii_alphanumeric())
+    !value.is_empty() && value.len() <= 5 && value.bytes().all(|byte| byte.is_ascii_alphanumeric())
 }
 
 fn parse_position(
@@ -221,7 +217,11 @@ fn parse_latitude(value: &str) -> Result<f64, AprsError> {
     }
 
     let decimal = degrees + minutes / 60.0;
-    Ok(if hemisphere == b'S' { -decimal } else { decimal })
+    Ok(if hemisphere == b'S' {
+        -decimal
+    } else {
+        decimal
+    })
 }
 
 fn parse_longitude(value: &str) -> Result<f64, AprsError> {
@@ -240,7 +240,11 @@ fn parse_longitude(value: &str) -> Result<f64, AprsError> {
     }
 
     let decimal = degrees + minutes / 60.0;
-    Ok(if hemisphere == b'W' { -decimal } else { decimal })
+    Ok(if hemisphere == b'W' {
+        -decimal
+    } else {
+        decimal
+    })
 }
 
 fn parse_decimal(value: &str) -> Result<f64, AprsError> {
@@ -260,10 +264,9 @@ fn parse_decimal(value: &str) -> Result<f64, AprsError> {
 
 fn decode_text(information: &[u8]) -> Result<&str, AprsError> {
     let text = str::from_utf8(information).map_err(|_| AprsError::InvalidText)?;
-    if !text
-        .bytes()
-        .all(|byte| byte == b'\r' || byte == b'\n' || byte == b'\t' || byte.is_ascii_graphic() || byte == b' ')
-    {
+    if !text.bytes().all(|byte| {
+        byte == b'\r' || byte == b'\n' || byte == b'\t' || byte.is_ascii_graphic() || byte == b' '
+    }) {
         return Err(AprsError::InvalidText);
     }
     Ok(text)
