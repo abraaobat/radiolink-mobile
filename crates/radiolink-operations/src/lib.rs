@@ -74,7 +74,10 @@ impl ProviderRegistry {
         self.bindings.get(provider_id)
     }
 
-    pub fn for_device(&self, device_id: &DeviceId) -> impl Iterator<Item = &ProviderBinding> {
+    pub fn for_device<'a>(
+        &'a self,
+        device_id: &'a DeviceId,
+    ) -> impl Iterator<Item = &'a ProviderBinding> + 'a {
         self.bindings
             .values()
             .filter(move |binding| &binding.device_id == device_id)
