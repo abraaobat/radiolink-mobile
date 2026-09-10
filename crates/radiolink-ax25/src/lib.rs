@@ -249,7 +249,10 @@ mod tests {
 
     #[test]
     fn validates_callsign_and_ssid() {
-        assert_eq!(Ax25Address::new("TOOLONG", 0), Err(Ax25Error::InvalidCallsign));
+        assert_eq!(
+            Ax25Address::new("TOOLONG", 0),
+            Err(Ax25Error::InvalidCallsign)
+        );
         assert_eq!(Ax25Address::new("PV8ABC", 16), Err(Ax25Error::InvalidSsid));
     }
 }
