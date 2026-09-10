@@ -7,9 +7,7 @@
 
 use std::collections::BTreeMap;
 
-use radiolink_core::{
-    DeviceId, DeviceRegistry, RadioCapability, TransportDescriptor, TransportId,
-};
+use radiolink_core::{DeviceId, DeviceRegistry, RadioCapability, TransportDescriptor, TransportId};
 use radiolink_tnc::{TncProviderDescriptor, TncProviderStatus, TncSessionState};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -76,10 +74,7 @@ impl ProviderRegistry {
         self.bindings.get(provider_id)
     }
 
-    pub fn for_device(
-        &self,
-        device_id: &DeviceId,
-    ) -> impl Iterator<Item = &ProviderBinding> {
+    pub fn for_device(&self, device_id: &DeviceId) -> impl Iterator<Item = &ProviderBinding> {
         self.bindings
             .values()
             .filter(move |binding| &binding.device_id == device_id)
@@ -157,10 +152,8 @@ impl OperationsEngine {
 
 #[cfg(test)]
 mod tests {
-    use radiolink_core::{
-        RadioDevice, TransportKind,
-    };
-    use radiolink_tnc::{TncProviderKind, TncProviderDescriptor};
+    use radiolink_core::{RadioDevice, TransportKind};
+    use radiolink_tnc::{TncProviderDescriptor, TncProviderKind};
 
     use super::*;
 
