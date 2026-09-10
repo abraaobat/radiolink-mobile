@@ -93,6 +93,126 @@ pub fn parse_information_field(information: &[u8]) -> Result<AprsPacket, AprsErr
     }
 }
 
+pub fn encode_packet(packet: &AprsPacket) -> Result<Vec<u8>, AprsError> {
+    match packet {
+        AprsPacket::Position(report) => encode_position(report),
+        AprsPacket::Status(status) => encode_status(status),
+        AprsPacket::Message(message) => encode_message(message),
+    }
+}
+
+pub fn encode_status(status: &AprsStatus) -> Result<Vec<u8>, AprsError> {
+    if !is_safe_text(&status.text) {
+        return Err(AprsError::MalformedStatus);
+    }
+
+    let mut out = String::from(">");
+    if let Some(timestamp) = &status.timestamp {
+        if !is_dhm_timestamp(timestamp) {
+            return Err(AprsError::MalformedStatus);
+        }
+        out.push_str(timestamp);
+    }
+    out.push_str(&status.text);
+    Ok(out.into_bytes())
+}
+
+pub fn encode_message(message: &AprsMessage) -> Result<Vec<u8>, AprsError> {
+    if message.addressee.is_empty()
+        || message.addressee.len() > 9
+        || !message
+            .addressee
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+    {
+        return Err(AprsError::MalformedMessage);
+    }
+
+    let body = match &message.kind {
+        AprsMessageKind::Text { text, message_id } => {
+            if !is_safe_text(text) {
+                return Err(AprsError::MalformedMessage);
+            }
+            if let Some(message_id) = message_id {
+                if !is_message_id(message_id) {
+                    return Err(AprsError::MalformedMessage);
+                }
+                format!("{text}{{{message_id}")
+            } else {
+                text.clone()
+            }
+        }
+        AprsMessageKind::Acknowledgement { message_id } => {
+            if !is_message_id(message_id) {
+                return Err(AprsError::MalformedMessage);
+            }
+            format!("ack{message_id}")
+        }
+        AprsMessageKind::Rejection { message_id } => {
+            if !is_message_id(message_id) {
+                return Err(AprsError::MalformedMessage);
+            }
+            format!("rej{message_id}")
+        }
+    };
+
+    Ok(format!(":{:<9}:{body}", message.addressee).into_bytes())
+}
+
+pub fn encode_position(report: &AprsPositionReport) -> Result<Vec<u8>, AprsError> {
+    if !report.symbol_table.is_ascii_graphic()
+        || !report.symbol_code.is_ascii_graphic()
+        || !is_safe_text(&report.comment)
+    {
+        return Err(AprsError::MalformedPosition);
+    }
+
+    let latitude = encode_coordinate(report.position.latitude, 2, 90.0, 'N', 'S')?;
+    let longitude = encode_coordinate(report.position.longitude, 3, 180.0, 'E', 'W')?;
+    let data_type = if report.messaging_capable { '=' } else { '!' };
+
+    Ok(format!(
+        "{data_type}{latitude}{}{longitude}{}{}",
+        report.symbol_table, report.symbol_code, report.comment
+    )
+    .into_bytes())
+}
+
+fn encode_coordinate(
+    value: f64,
+    degree_width: usize,
+    maximum: f64,
+    positive_hemisphere: char,
+    negative_hemisphere: char,
+) -> Result<String, AprsError> {
+    if !value.is_finite() || value.abs() > maximum {
+        return Err(AprsError::MalformedPosition);
+    }
+
+    let absolute = value.abs();
+    let mut degrees = absolute.floor() as u16;
+    let raw_minutes = (absolute - f64::from(degrees)) * 60.0;
+    let mut minutes = (raw_minutes * 100.0).round() / 100.0;
+
+    if minutes >= 60.0 {
+        degrees += 1;
+        minutes = 0.0;
+    }
+    if f64::from(degrees) > maximum {
+        return Err(AprsError::MalformedPosition);
+    }
+
+    let hemisphere = if value.is_sign_negative() {
+        negative_hemisphere
+    } else {
+        positive_hemisphere
+    };
+
+    Ok(format!(
+        "{degrees:0degree_width$}{minutes:05.2}{hemisphere}"
+    ))
+}
+
 fn parse_status(information: &[u8]) -> Result<AprsStatus, AprsError> {
     let text = decode_text(information)?;
     let payload = text.strip_prefix('>').ok_or(AprsError::MalformedStatus)?;
@@ -272,6 +392,12 @@ fn decode_text(information: &[u8]) -> Result<&str, AprsError> {
     Ok(text)
 }
 
+fn is_safe_text(value: &str) -> bool {
+    value
+        .bytes()
+        .all(|byte| byte == b' ' || byte.is_ascii_graphic())
+}
+
 #[cfg(test)]
 mod tests {
     use radiolink_ax25::{Ax25Address, Ax25UiFrame};
@@ -308,6 +434,24 @@ mod tests {
     }
 
     #[test]
+    fn round_trips_supported_position_encoding() {
+        let original = AprsPacket::Position(AprsPositionReport {
+            position: AprsPosition {
+                latitude: 2.816_666_666_666_666_4,
+                longitude: -60.666_666_666_666_664,
+            },
+            symbol_table: '/',
+            symbol_code: '>',
+            comment: "Boa Vista".into(),
+            messaging_capable: true,
+        });
+
+        let encoded = encode_packet(&original).unwrap();
+        assert_eq!(encoded, b"=0249.00N/06040.00W>Boa Vista");
+        assert_eq!(parse_information_field(&encoded).unwrap(), original);
+    }
+
+    #[test]
     fn rejects_invalid_position_minutes() {
         assert_eq!(
             parse_information_field(b"!0260.00N/06040.00W>bad"),
@@ -334,6 +478,18 @@ mod tests {
     }
 
     #[test]
+    fn round_trips_status_encoding() {
+        let original = AprsPacket::Status(AprsStatus {
+            timestamp: Some("092345z".into()),
+            text: "RadioLink online".into(),
+        });
+
+        let encoded = encode_packet(&original).unwrap();
+        assert_eq!(encoded, b">092345zRadioLink online");
+        assert_eq!(parse_information_field(&encoded).unwrap(), original);
+    }
+
+    #[test]
     fn parses_message_with_number() {
         assert_eq!(
             parse_information_field(b":PV8ABC-7 :Cheguei bem{42"),
@@ -345,6 +501,21 @@ mod tests {
                 },
             }))
         );
+    }
+
+    #[test]
+    fn round_trips_message_encoding() {
+        let original = AprsPacket::Message(AprsMessage {
+            addressee: "PV8ABC-7".into(),
+            kind: AprsMessageKind::Text {
+                text: "Cheguei bem".into(),
+                message_id: Some("42".into()),
+            },
+        });
+
+        let encoded = encode_packet(&original).unwrap();
+        assert_eq!(encoded, b":PV8ABC-7 :Cheguei bem{42");
+        assert_eq!(parse_information_field(&encoded).unwrap(), original);
     }
 
     #[test]
@@ -370,6 +541,20 @@ mod tests {
     }
 
     #[test]
+    fn round_trips_acknowledgement_encoding() {
+        let original = AprsPacket::Message(AprsMessage {
+            addressee: "PV8ABC-7".into(),
+            kind: AprsMessageKind::Acknowledgement {
+                message_id: "003".into(),
+            },
+        });
+
+        let encoded = encode_packet(&original).unwrap();
+        assert_eq!(encoded, b":PV8ABC-7 :ack003");
+        assert_eq!(parse_information_field(&encoded).unwrap(), original);
+    }
+
+    #[test]
     fn parses_directly_from_ax25_ui_information() {
         let frame = Ax25UiFrame {
             destination: Ax25Address::new("APRS", 0).unwrap(),
@@ -384,6 +569,33 @@ mod tests {
                 timestamp: None,
                 text: "RadioLink online".into(),
             }))
+        );
+    }
+
+    #[test]
+    fn rejects_bad_encoding_inputs() {
+        assert_eq!(
+            encode_message(&AprsMessage {
+                addressee: "TOO-LONG-10".into(),
+                kind: AprsMessageKind::Text {
+                    text: "test".into(),
+                    message_id: None,
+                },
+            }),
+            Err(AprsError::MalformedMessage)
+        );
+        assert_eq!(
+            encode_position(&AprsPositionReport {
+                position: AprsPosition {
+                    latitude: 91.0,
+                    longitude: 0.0,
+                },
+                symbol_table: '/',
+                symbol_code: '>',
+                comment: String::new(),
+                messaging_capable: false,
+            }),
+            Err(AprsError::MalformedPosition)
         );
     }
 

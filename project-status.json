@@ -1,29 +1,30 @@
 {
   "schemaVersion": 1,
   "projectId": "radiolink-mobile",
-  "updatedAt": "2026-09-09T22:55:00-04:00",
-  "status": "F4 APRS core em validação",
+  "updatedAt": "2026-09-09T23:18:00-04:00",
+  "status": "F4 protocol pipeline em validação",
   "statusClass": "validate",
-  "progress": 40,
+  "progress": 44,
   "roadmap": "F0–F17 • F3/F4 ativos",
-  "current": "KISS streaming e AX.25 UI-frame codec estão no main com CI. A nova etapa F4 adiciona parsing APRS incremental sobre o campo Information: posição não comprimida sem timestamp (`!`/`=`), status (`>`) e mensagens (`:`) com message ID, ACK e REJ. Formatos não suportados permanecem explícitos em vez de serem inferidos incorretamente.",
-  "architecture": "User action → Operational Service → APRS Position/Status/Message → AX.25 UI frame → KISS → TNC/Modem Provider → Transport Manager → Device → RF",
-  "next": "Fazer o CI do parser APRS ficar verde, integrar ao main e depois adicionar fixtures capturadas/reais e formatos adicionais apenas conforme necessidade operacional.",
-  "action": "Validar o subset APRS em CI e manter timestamped position, compressed/Mic-E e demais formatos como suporte explícito futuro.",
+  "current": "KISS streaming, AX.25 UI frames e o subset APRS estão implementados. A etapa atual adiciona encoding APRS para posição/status/mensagem/ACK/REJ e um teste de pipeline que atravessa APRS → AX.25 → KISS, fragmenta o stream KISS e reconstrói KISS → AX.25 → APRS sem hardware.",
+  "architecture": "APRS Position/Status/Message ↔ AX.25 UI frame ↔ KISS stream ↔ TNC/Modem Provider ↔ Transport Manager ↔ Device ↔ RF",
+  "next": "Fazer o pipeline bidirecional passar em CI; depois consolidar fixtures capturadas e conectar o primeiro TNC/software-TNC real sem alterar as camadas de protocolo.",
+  "action": "Validar encoding + round-trip completo em CI e então mover o foco de F4 para fixtures reais/transport integration.",
   "subprojects": [
     "CLI/headless",
     "Operations Engine",
     "Capability Registry",
     "KISS encoder/decoder/streaming ✓",
     "AX.25 address/UI codec ✓",
-    "APRS Position/Status/Message parser",
+    "APRS Position/Status/Message decode ✓",
+    "APRS supported-subset encode",
+    "Cross-layer protocol pipeline",
     "Captured fixtures",
-    "BLE / USB / Audio-PTT",
-    "RadioLink Bridge"
+    "BLE / USB / Audio-PTT"
   ],
   "activity": {
     "date": "2026-09-09",
-    "type": "implementation",
-    "text": "F4 advanced with an incremental APRS information-field parser for uncompressed positions, status and messages/ACK/REJ on top of the AX.25 UI-frame layer."
+    "type": "integration-test",
+    "text": "F4 advanced toward a bidirectional in-memory pipeline with APRS encoding plus a fragmented KISS → AX.25 → APRS round-trip test, still independent of physical transports."
   }
 }

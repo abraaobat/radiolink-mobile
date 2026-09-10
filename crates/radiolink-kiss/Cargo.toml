@@ -6,3 +6,7 @@ license.workspace = true
 
 [dependencies]
 thiserror.workspace = true
+
+[dev-dependencies]
+radiolink-ax25 = { path = "../radiolink-ax25" }
+radiolink-aprs = { path = "../radiolink-aprs" }
