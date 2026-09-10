@@ -1,4 +1,4 @@
-use radiolink_aprs::{AprsMessage, AprsMessageKind, AprsPacket, parse_ax25_ui_frame};
+use radiolink_aprs::{parse_ax25_ui_frame, AprsMessage, AprsMessageKind, AprsPacket};
 use radiolink_ax25::{Ax25Address, Ax25UiFrame};
 use radiolink_kiss::decode_frame;
 
