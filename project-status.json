@@ -1,30 +1,31 @@
 {
   "schemaVersion": 1,
   "projectId": "radiolink-mobile",
-  "updatedAt": "2026-09-09T23:24:00-04:00",
-  "status": "F4 protocol core + golden fixture",
+  "updatedAt": "2026-09-10T18:59:00-04:00",
+  "status": "F1/F4 core em validação",
   "statusClass": "validate",
-  "progress": 46,
-  "roadmap": "F0–F17 • F3/F4 ativos",
-  "current": "KISS streaming, AX.25 UI frames e o subset APRS bidirecional estão implementados e validados em CI. O pipeline APRS ↔ AX.25 ↔ KISS também possui agora uma primeira golden fixture externa versionada, com endereço de destino/origem, caminho WIDE1-1 e mensagem APRS, para validar o decoder sem gerar os bytes durante o próprio teste.",
-  "architecture": "APRS Position/Status/Message ↔ AX.25 UI frame ↔ KISS stream ↔ TNC/Modem Provider ↔ Transport Manager ↔ Device ↔ RF",
-  "next": "Adicionar evidência capturada de um TNC/software-TNC real e conectar o primeiro transporte KISS real; manter a golden fixture determinística separada de qualquer alegação de captura RF.",
-  "action": "Mover F3/F4 do core puramente determinístico para fixture capturada + integração com TNC/software-TNC real.",
+  "progress": 50,
+  "roadmap": "F0–F17 • F1/F3/F4 ativos",
+  "current": "KISS streaming, AX.25 UI frames, APRS bidirecional e golden fixture estão implementados e validados em CI. O F1 também avançou com RadioDevice, TransportKind, CapabilitySet, DeviceRegistry, TNC Provider contract, estados de sessão e Operations Engine capaz de resolver dispositivo lógico → transporte KISS → provider pronto para APRS/Packet.",
+  "architecture": "Operation → Operations Engine → RadioDevice → Transport → TNC/Modem Provider → KISS → AX.25 → APRS/Packet → RF",
+  "next": "Conectar o primeiro provider/transporte real ao Operations Engine, preferencialmente Dire Wolf TCP KISS no fluxo host-first com DigiRig, e capturar a primeira fixture real sem alterar o core de protocolo.",
+  "action": "Implementar o adapter TCP KISS/Dire Wolf e validar um pipeline real device → transport → provider → protocol antes de avançar para BLE/USB específicos.",
   "subprojects": [
-    "CLI/headless",
-    "Operations Engine",
-    "Capability Registry",
+    "RadioDevice + multi-transport model ✓",
+    "CapabilitySet + DeviceRegistry ✓",
+    "TNC Provider + session state ✓",
+    "Operations Engine resolution ✓",
     "KISS encoder/decoder/streaming ✓",
     "AX.25 address/UI codec ✓",
     "APRS supported-subset decode/encode ✓",
-    "Cross-layer protocol pipeline ✓",
     "Golden deterministic fixture ✓",
+    "Dire Wolf TCP KISS adapter",
     "Captured real fixture",
     "BLE / USB / Audio-PTT"
   ],
   "activity": {
-    "date": "2026-09-09",
-    "type": "fixture-validation",
-    "text": "F4 gained its first versioned external golden KISS/AX.25/APRS fixture, complementing the bidirectional round-trip tests while keeping live/captured transport evidence as a separate gate."
+    "date": "2026-09-10",
+    "type": "core-integration",
+    "text": "F1 advanced with CI-validated logical-device, transport, capability and TNC-provider resolution, while F3/F4 protocol core remains validated independently of physical hardware."
   }
 }
