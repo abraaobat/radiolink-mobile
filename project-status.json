@@ -1,30 +1,30 @@
 {
   "schemaVersion": 1,
   "projectId": "radiolink-mobile",
-  "updatedAt": "2026-09-09T23:18:00-04:00",
-  "status": "F4 protocol pipeline em validação",
+  "updatedAt": "2026-09-09T23:24:00-04:00",
+  "status": "F4 protocol core + golden fixture",
   "statusClass": "validate",
-  "progress": 44,
+  "progress": 46,
   "roadmap": "F0–F17 • F3/F4 ativos",
-  "current": "KISS streaming, AX.25 UI frames e o subset APRS estão implementados. A etapa atual adiciona encoding APRS para posição/status/mensagem/ACK/REJ e um teste de pipeline que atravessa APRS → AX.25 → KISS, fragmenta o stream KISS e reconstrói KISS → AX.25 → APRS sem hardware.",
+  "current": "KISS streaming, AX.25 UI frames e o subset APRS bidirecional estão implementados e validados em CI. O pipeline APRS ↔ AX.25 ↔ KISS também possui agora uma primeira golden fixture externa versionada, com endereço de destino/origem, caminho WIDE1-1 e mensagem APRS, para validar o decoder sem gerar os bytes durante o próprio teste.",
   "architecture": "APRS Position/Status/Message ↔ AX.25 UI frame ↔ KISS stream ↔ TNC/Modem Provider ↔ Transport Manager ↔ Device ↔ RF",
-  "next": "Fazer o pipeline bidirecional passar em CI; depois consolidar fixtures capturadas e conectar o primeiro TNC/software-TNC real sem alterar as camadas de protocolo.",
-  "action": "Validar encoding + round-trip completo em CI e então mover o foco de F4 para fixtures reais/transport integration.",
+  "next": "Adicionar evidência capturada de um TNC/software-TNC real e conectar o primeiro transporte KISS real; manter a golden fixture determinística separada de qualquer alegação de captura RF.",
+  "action": "Mover F3/F4 do core puramente determinístico para fixture capturada + integração com TNC/software-TNC real.",
   "subprojects": [
     "CLI/headless",
     "Operations Engine",
     "Capability Registry",
     "KISS encoder/decoder/streaming ✓",
     "AX.25 address/UI codec ✓",
-    "APRS Position/Status/Message decode ✓",
-    "APRS supported-subset encode",
-    "Cross-layer protocol pipeline",
-    "Captured fixtures",
+    "APRS supported-subset decode/encode ✓",
+    "Cross-layer protocol pipeline ✓",
+    "Golden deterministic fixture ✓",
+    "Captured real fixture",
     "BLE / USB / Audio-PTT"
   ],
   "activity": {
     "date": "2026-09-09",
-    "type": "integration-test",
-    "text": "F4 advanced toward a bidirectional in-memory pipeline with APRS encoding plus a fragmented KISS → AX.25 → APRS round-trip test, still independent of physical transports."
+    "type": "fixture-validation",
+    "text": "F4 gained its first versioned external golden KISS/AX.25/APRS fixture, complementing the bidirectional round-trip tests while keeping live/captured transport evidence as a separate gate."
   }
 }
