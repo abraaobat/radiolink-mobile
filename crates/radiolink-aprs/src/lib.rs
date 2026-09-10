@@ -437,8 +437,8 @@ mod tests {
     fn round_trips_supported_position_encoding() {
         let original = AprsPacket::Position(AprsPositionReport {
             position: AprsPosition {
-                latitude: 2.816_666_666_7,
-                longitude: -60.666_666_666_7,
+                latitude: 2.816_666_666_666_666_4,
+                longitude: -60.666_666_666_666_664,
             },
             symbol_table: '/',
             symbol_code: '>',
