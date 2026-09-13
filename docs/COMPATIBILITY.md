@@ -4,7 +4,7 @@
 
 RadioLink classifies radios and interfaces by **actual exposed transports and capabilities**, not by marketing labels such as “Bluetooth radio” or “USB radio”.
 
-A connection type alone does not imply Packet, APRS, KISS, TNC, CAT or audio support.
+A connection type alone does not imply Packet, APRS, KISS, TNC, CAT, audio or satellite suitability.
 
 Specific radios and interfaces are tracked separately in the nominal device registry:
 
@@ -43,6 +43,11 @@ Transports
 
 Capabilities
 [ ] CAT / radio control
+[ ] Frequency read/control
+[ ] Independent RX/TX frequency control / split
+[ ] Mode / bandwidth control
+[ ] Tone / signaling control
+[ ] TX power control
 [ ] Audio RX
 [ ] Audio TX
 [ ] PTT
@@ -53,9 +58,13 @@ Capabilities
 [ ] Telemetry
 [ ] USB audio
 [ ] USB serial/CAT
+[ ] Dual watch / Main-Sub monitoring
+[ ] Full duplex / simultaneous RX while TX
 ```
 
 Location/time used by an application are modeled separately through Context Providers. A radio may expose GPS/GNSS data, but `location` is not assumed to be owned by the radio.
+
+For Satellite Operations, frequency control, independent RX/TX control and full-duplex behavior are separate capability facts. **Dual watch never implies full duplex.**
 
 ## Compatibility classes
 
@@ -70,7 +79,10 @@ Host ↔ BLE KISS ↔ Radio/TNC ↔ RF
 Typical characteristics:
 - no DigiRig required;
 - no software TNC required;
-- APRS/Packet frames can move directly through the provider abstraction.
+- APRS/Packet frames can move directly through the provider abstraction;
+- radio-control capabilities may exist on the same or a separate Bluetooth service and must be modeled independently.
+
+The BTECH UV-PRO is the first owned P0 reference for this class and also the first Satellite Operations radio-control reference.
 
 ### Class B — Embedded USB KISS/TNC radio or interface
 
@@ -119,7 +131,7 @@ Host ↔ Bluetooth CAT ↔ Radio
 
 Supports control only.
 
-This class is **not** Packet/APRS capable unless a second TNC/audio path exists.
+This class is **not** Packet/APRS capable unless a second TNC/audio path exists. It may still be useful for Satellite Operations when frequency control is available and a separate receiver/TNC path supplies data/audio.
 
 ### Class F — Bluetooth audio + PTT
 
@@ -150,6 +162,8 @@ Host / RadioLink
 ```
 
 RadioLink should compose these capabilities through the Device Registry, Capability Registry, Context Provider Registry and Transport Manager rather than forcing the device into a single transport class.
+
+This composition is especially useful for satellite workflows, where RF/TNC, radio control, location and even downlink monitoring may come from different devices/providers.
 
 ## TNC/Modem Provider mapping
 
@@ -186,11 +200,34 @@ A workflow may therefore combine:
 
 ```text
 BLE → KISS/TNC
+BLE → radio control
 USB → GPS
 Host OS → location fallback / time
+SDR → satellite downlink RX
 ```
 
 without treating those sources as one physical interface.
+
+## Satellite capability mapping
+
+Satellite Operations adds an orchestration layer on top of existing capabilities rather than a new physical compatibility class.
+
+A device/profile may be usable in one of several satellite roles:
+
+| Role | Minimum relevant capabilities |
+|---|---|
+| Pass planning only | LocationProvider + TimeProvider; no radio required |
+| Receive-only satellite radio | frequency control recommended; RX path required |
+| Single-radio FM/Packet satellite | frequency control + PTT/TNC or voice path as required by profile |
+| Satellite APRS/Packet | KISS/TNC + frequency control where Doppler correction is required |
+| Independent uplink/downlink | split or independent RX/TX frequency control |
+| Full-duplex station | explicit simultaneous RX/TX evidence, or separate RX/TX devices |
+| Radio + SDR | TX radio-control path + independent SDR receive provider |
+| Rotor-assisted station | Satellite Engine + future Rotator Provider |
+
+A profile must never claim full duplex from `dualWatch=true` alone.
+
+See [`SATELLITE-OPERATIONS.md`](SATELLITE-OPERATIONS.md).
 
 ## RadioLink Profile requirements
 
@@ -205,16 +242,21 @@ Every device/profile should document, where applicable:
 - Bluetooth profile/service identifiers where known;
 - USB interface classes where known;
 - CAT availability;
+- frequency read/control;
+- independent RX/TX or split capability;
+- mode/bandwidth/tone/power control where applicable;
 - audio RX/TX availability;
 - PTT mechanism;
 - KISS availability;
 - embedded TNC availability;
 - radio GPS/GNSS/telemetry exposure;
+- dual-watch state separately from full-duplex evidence;
 - cable/interface requirements;
 - required radio-side settings/preflight recipe;
 - audio RX/TX calibration;
 - tested host platforms;
 - supported/verified RadioLink services;
+- Satellite Operations role/limits where applicable;
 - layered diagnostic result;
 - test evidence;
 - limitations/quirks.
@@ -245,6 +287,8 @@ SUPPORTED
 
 Success in one device + firmware + host + transport + provider + service combination does not automatically validate another.
 
+Satellite validation should record the exact satellite profile/TLE epoch and whether the test was pass prediction, receive-only, Doppler control, Packet/APRS or TX-capable operation.
+
 ## Runtime rules
 
 1. Bluetooth presence never implies KISS/TNC.
@@ -252,13 +296,16 @@ Success in one device + firmware + host + transport + provider + service combina
 3. A device may expose capabilities on multiple transports.
 4. Capabilities may be composed, for example CAT over BLE and KISS/audio over USB.
 5. Context may come from a different source/transport than RF/TNC capability.
-6. Services such as APRS/Packet/Winlink consume provider abstractions and must not bind directly to a compatibility class.
+6. Services such as APRS/Packet/Winlink/Satellite consume provider abstractions and must not bind directly to a compatibility class.
 7. Known-good Profiles supplement, but do not replace, runtime capability discovery when discovery is technically possible.
 8. Firmware and required radio-side configuration are part of the capability-validation context.
 9. RadioLink should report the highest verified diagnostic layer rather than collapsing every problem into a service-level error.
+10. Dual watch/Main-Sub monitoring never implies full duplex.
+11. Automatic Doppler control must be enabled only when the exact radio-control capability/path has been validated.
+12. Satellite TX configuration must remain profile- and operator-gated; RadioLink must not infer that a technically tunable frequency is legally or operationally valid for transmission.
 
 ## Rule of thumb
 
-> **Transport tells RadioLink how it may connect. Capabilities tell RadioLink what it can actually do. Context Providers tell services where operational data such as location/time comes from.**
+> **Transport tells RadioLink how it may connect. Capabilities tell RadioLink what it can actually do. Context Providers tell services where operational data such as location/time comes from. Satellite Profiles tell the Satellite Engine how to orchestrate those capabilities for a specific spacecraft/service.**
 
 RadioLink must never infer one from the other.
