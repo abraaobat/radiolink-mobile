@@ -4,7 +4,7 @@ Status legend: `NOT STARTED` · `IN PROGRESS` · `DONE` · `BLOCKED`
 
 ## North Star
 
-Deliver one cross-platform amateur-radio platform for Android, iOS, Linux and macOS where users connect a compatible radio/TNC/interface, choose an operational goal such as messaging, position, Packet or Winlink, and operate without requiring a Raspberry Pi/DigiPi appliance.
+Deliver one cross-platform amateur-radio platform for Android, iOS, Linux and macOS where users connect a compatible radio/TNC/interface, choose an operational goal such as messaging, position, Packet, Winlink or satellite operation, and operate without requiring a Raspberry Pi/DigiPi appliance.
 
 RadioLink must support three official I/O paths without coupling services to any one of them:
 
@@ -16,7 +16,7 @@ RadioLink must support three official I/O paths without coupling services to any
 
 # Platform tracks
 
-The existing F0–F15 phase numbering is preserved for continuity. The broader platform is organized into five tracks.
+The existing F0–F17 phase numbering is preserved for continuity. Satellite Operations is added as F18.
 
 ## Track A — Core + Applications
 
@@ -47,6 +47,12 @@ Primary phase: `F16`.
 Experimental features and market/architecture research that must not inflate the MVP.
 
 Primary phase: `F17`.
+
+## Track F — Satellite Operations
+
+Orbit/pass prediction, Doppler, satellite profiles, radio-control orchestration, satellite Packet/APRS and later full-duplex/ground-station integration.
+
+Primary phase: `F18`.
 
 ---
 
@@ -79,14 +85,16 @@ Establish product boundaries, cross-platform architecture, repository layout and
 - [x] Record ADR-0004 for three-path I/O and platform ecosystem.
 - [x] Record ADR-0005 for Context Providers and layered diagnostics.
 - [x] Create nominal device-registry governance and initial P0 lab profiles.
-- [x] Select the first owned-hardware compatibility PoC path: macOS CLI + DigiRig + Quansheng UV-K1/UV-K5 + software TNC.
-- [ ] Acquire/borrow and validate the first direct BLE KISS reference device; BTECH UV-Pro is the current P1 candidate.
-- [ ] Capture Bluetooth services/characteristics for the first BLE reference device.
+- [x] Select owned-hardware compatibility PoC path: macOS CLI + DigiRig + Quansheng UV-K1/UV-K5 + software TNC.
+- [x] Select first owned direct BLE/KISS reference device: **BTECH UV-PRO** (`LAB_AVAILABLE`).
+- [x] Select BTECH UV-PRO as first Satellite Operations radio/control reference.
+- [ ] Record exact UV-PRO hardware/firmware version.
+- [ ] Capture UV-PRO Bluetooth services/characteristics and control/KISS paths.
 - [ ] Select the first USB-native reference device/interface path.
 - [ ] Define KISS/AX.25/APRS packet fixtures.
 
 ### Exit criteria
-A developer can clone the repository and understand the platform targets, mission UX, three I/O paths, shared-core strategy, context-provider model, device registry, first owned-hardware PoC and modern reference candidates.
+A developer can clone the repository and understand the platform targets, mission UX, three I/O paths, shared-core strategy, context-provider model, device registry, first owned-hardware PoCs and modern reference targets.
 
 ---
 
@@ -145,12 +153,13 @@ Discover, connect and maintain reliable sessions with Bluetooth/BLE radios/TNCs 
 - [ ] Human-readable error states.
 - [ ] Layered reporting for pairing → service discovery → capability match → provider readiness.
 - [ ] Raw RX/TX diagnostics.
-- [ ] First reference driver.
+- [ ] First reference driver: BTECH UV-PRO.
+- [ ] Capture UV-PRO KISS and radio-control characteristics/commands.
 - [ ] Desktop/macOS implementation first.
 - [ ] Mobile adapters after core validation.
 
 ### Exit criteria
-RadioLink can connect to the reference BLE device, exchange raw data reliably, recover a dropped session and correctly distinguish control/audio/KISS/TNC capabilities with a specific failure layer when unavailable.
+RadioLink can connect to the lab UV-PRO, exchange raw data reliably, recover a dropped session and correctly distinguish radio-control, audio, KISS/TNC, GPS/telemetry and satellite-relevant frequency-control capabilities.
 
 ---
 
@@ -211,7 +220,7 @@ Use desktop as a full validation environment after CLI/core spikes, without chan
 - [ ] APRS receive view.
 - [ ] Basic APRS transmit.
 - [ ] Linux/macOS parity baseline.
-- [ ] Validate at least one direct BLE KISS path.
+- [ ] Validate at least one direct BLE KISS path using UV-PRO.
 - [ ] Validate at least one USB/serial or USB-native digital path.
 - [ ] Validate at least one software-TNC/audio path using DigiRig or equivalent.
 
@@ -240,7 +249,7 @@ Expose the shared core on macOS/Linux through terminal workflows and use the CLI
 - [ ] `radiolink pipeline`.
 - [ ] `radiolink diagnose`.
 - [ ] `radiolink context`.
-- [ ] Real BLE device discovery.
+- [ ] Real BLE device discovery — first target UV-PRO.
 - [ ] Real USB device discovery.
 - [ ] Real USB audio/serial interface enumeration for DigiRig-class hardware.
 - [ ] Display selected/available Location/Time Providers.
@@ -268,6 +277,7 @@ Core radio diagnostics and Packet/APRS operations can run without a GUI and reve
 - [ ] ACK/REJ handling.
 - [ ] Mission-first actions: message / position / stations.
 - [ ] Provider/transport independence.
+- [ ] Reusable service boundary for later satellite APRS orchestration.
 
 ### Exit criteria
 APRS is a coherent service regardless of whether frames come from an embedded TNC, external BLE/USB KISS TNC or software TNC/audio path, and position workflows can use an appropriate context provider independent of the radio transport.
@@ -297,15 +307,22 @@ A user can conduct a practical connected-mode session through a supported provid
 
 ### Deliverables
 - [ ] Capability-gated frequency/channel state.
-- [ ] Mode/power/PTT hooks where safely exposed.
+- [ ] Frequency read/set interface.
+- [ ] Independent RX/TX frequency or split capability representation.
+- [ ] Mode/bandwidth/tone/power hooks where safely exposed.
+- [ ] PTT hooks where safely exposed.
+- [ ] Explicit dual-watch state separate from full-duplex capability.
+- [ ] Explicit simultaneous RX/TX/full-duplex capability flag based on evidence.
+- [ ] Rate-limited tuning/control scheduler suitable for Doppler updates.
 - [ ] Unsupported-state UX.
-- [ ] Shared state with APRS/Packet services.
+- [ ] Shared state with APRS/Packet/Satellite services.
 - [ ] Support control-only Bluetooth devices without falsely marking them as Packet-capable.
-- [ ] Support CAT from one transport while data/TNC uses another where possible.
+- [ ] Support CAT/control from one transport while data/TNC uses another where possible.
 - [ ] Preserve mixed-transport capability composition under one logical device identity.
+- [ ] UV-PRO control-path mapping using official behavior + HTCommander as references and bench evidence as authority.
 
 ### Exit criteria
-Richer radios expose control without making control mandatory for simpler TNCs, and mixed-transport capability composition is represented accurately.
+Richer radios expose control without making control mandatory for simpler TNCs, mixed-transport capability composition is represented accurately, and Satellite Operations can request validated frequency-control operations without knowing the device-specific protocol.
 
 ---
 
@@ -393,16 +410,23 @@ Make hardware support capability-driven and capture known-good radio/interface/c
 - [x] Initial compatibility matrix document.
 - [x] Nominal P0/P1/P2/watchlist device registry.
 - [x] Initial P0 lab profiles for UV-K1 2 MB, UV-K5 V3, UV-5 Mini and QYT KT-7900D.
+- [x] Add BTECH UV-PRO P0 lab profile with Satellite Operations fields.
 - [x] Document profile fields for firmware/version, interface/cable, required radio-side settings, validation state and evidence.
+- [x] Extend profile model with frequency/split/dual-watch/full-duplex/satellite observations.
 - [ ] Runtime profile schema/loader.
 - [ ] Audio RX/TX calibration tooling/fields in runtime schema.
 - [ ] PTT method representation in runtime schema.
 - [ ] Known-good platform/mode validation state in runtime schema.
 - [ ] Context-provider compatibility/profile fields.
+- [ ] Satellite profile/device-role fields in runtime schema.
 - [ ] Per-device capability flags:
   - [ ] Bluetooth.
   - [ ] USB.
   - [ ] CAT / radio control.
+  - [ ] frequency read/control.
+  - [ ] independent RX/TX / split.
+  - [ ] dual watch.
+  - [ ] full duplex / simultaneous RX-TX.
   - [ ] Audio RX.
   - [ ] Audio TX.
   - [ ] PTT.
@@ -412,7 +436,7 @@ Make hardware support capability-driven and capture known-good radio/interface/c
   - [ ] Radio GPS/GNSS source exposure.
   - [ ] telemetry.
 - [ ] Tested-platform matrix: Android / iOS / Linux / macOS.
-- [ ] Supported-service matrix: APRS / Packet / Winlink / Radio Control / diagnostics.
+- [ ] Supported-service matrix: APRS / Packet / Winlink / Radio Control / Satellite / diagnostics.
 - [ ] Profile promotion tooling/state transitions: RESEARCHED → CANDIDATE → LAB_AVAILABLE → CONNECTED → RX_VERIFIED → TX_VERIFIED → PROFILE_VERIFIED → SUPPORTED.
 - [ ] Contribution guide.
 - [ ] Future community profile submission workflow design.
@@ -429,15 +453,15 @@ Make hardware support capability-driven and capture known-good radio/interface/c
 
 ### Nominal reference targets
 
-- **P0 / lab available:** Quansheng UV-K1 2 MB, Quansheng UV-K5 V3, Baofeng UV-5 Mini, QYT KT-7900D, DigiRig Mobile.
-- **P1 / modern reference candidates:** BTECH UV-Pro, VGC/Vero VR-N76 family, Kenwood TH-D75.
+- **P0 / lab available:** BTECH UV-PRO, Quansheng UV-K1 2 MB, Quansheng UV-K5 V3, Baofeng UV-5 Mini, QYT KT-7900D, DigiRig Mobile.
+- **P1 / modern reference candidates:** VGC/Vero VR-N76 family, Kenwood TH-D75.
 - **P2 / boundary reference:** Retevis Ailunce HA2.
 - **Watchlist:** Radtel RT-660, Baofeng DM-UV32.
 
 See `docs/devices/REGISTRY.md` for current state and support rules.
 
 ### Exit criteria
-A contributor can describe a radio accurately by capabilities/transports/context requirements and add support without modifying APRS/Packet core logic; support state is traceable to exact bench evidence.
+A contributor can describe a radio accurately by capabilities/transports/context requirements and add support without modifying APRS/Packet/Satellite core logic; support state is traceable to exact bench evidence.
 
 ---
 
@@ -517,6 +541,7 @@ Define a future open, documented interoperability profile for radios and accesso
 - [ ] KISS over BLE profile guidance.
 - [ ] KISS/serial over USB guidance.
 - [ ] CAT/control capability description.
+- [ ] Frequency/split/full-duplex capability description for advanced services such as Satellite Operations.
 - [ ] PTT/GPS/battery/telemetry capability description.
 - [ ] Context-provider capability/source description where relevant.
 - [ ] Reference implementation using RadioLink Bridge.
@@ -568,6 +593,80 @@ Research findings can be promoted deliberately through `PROMOTION-REGISTER.md` i
 
 ---
 
+## F18 — Satellite Operations
+
+**Status:** NOT STARTED
+
+### Goal
+Provide an offline-capable satellite operating workflow that combines orbital prediction, operational context, radio control, Doppler correction, satellite profiles, Packet/APRS and logging without coupling the service to one radio model.
+
+The **BTECH UV-PRO** is the first owned hardware reference. The Satellite Engine remains generic and consumes RadioLink device/capability/context/provider abstractions.
+
+### F18.1 — Orbit Core + Pass Prediction
+- [ ] TLE import/persistence.
+- [ ] TLE epoch/freshness state.
+- [ ] standards-based SGP4-class propagation boundary.
+- [ ] observer position through `LocationProvider`.
+- [ ] time through `TimeProvider`.
+- [ ] AOS/LOS/max elevation/range/radial-velocity prediction.
+- [ ] deterministic pass fixtures/tests.
+
+### F18.2 — Doppler + Radio Control
+- [ ] uplink/downlink Doppler calculation.
+- [ ] separate RX/TX correction.
+- [ ] Satellite Radio Control capability contract.
+- [ ] rate-limited tuning scheduler.
+- [ ] AUTO/HOLD/MANUAL control states.
+- [ ] UV-PRO Doppler/control validation.
+
+### F18.3 — Satellite UX
+- [ ] satellite list/favorites.
+- [ ] pass planner.
+- [ ] live AOS/LOS/azimuth/elevation/range view.
+- [ ] sky plot.
+- [ ] antenna-pointing aid.
+- [ ] stale-TLE warning and optional online refresh.
+
+### F18.4 — Satellite Packet/APRS
+- [ ] satellite profile integration with KISS/AX.25/APRS.
+- [ ] configurable ARISS/ISS-style preset model.
+- [ ] live Packet/APRS monitor tied to a pass.
+- [ ] messaging where supported.
+- [ ] pass-linked packet RX/TX statistics.
+
+### F18.5 — Pass/QSO Logging
+- [ ] pass history.
+- [ ] QSO/contact records.
+- [ ] TLE/profile/device/firmware context.
+- [ ] optional audio-recording reference.
+- [ ] export-model study.
+
+### F18.6 — Full-Duplex Expansion
+- [ ] explicit full-duplex capability model.
+- [ ] two-radio orchestration.
+- [ ] radio + SDR receive architecture.
+- [ ] downlink-monitoring UX.
+
+### F18.7 — Advanced Ground Station
+- [ ] Rotator Provider abstraction.
+- [ ] telemetry-decoder provider/plugin concept.
+- [ ] automated pointing integration.
+- [ ] richer satellite telemetry/logging.
+
+### Guardrails
+- Dual watch/Main-Sub does **not** imply full duplex.
+- Satellite profiles are data/configuration, not permission to transmit.
+- Doppler automation is enabled only through a validated radio-control path.
+- Core pass prediction should work offline once current TLE/context data is available.
+- Frequencies/paths/tones must be updateable profile data, not permanent hard-coded constants.
+
+### Initial exit criteria
+On macOS using the lab UV-PRO, RadioLink can load a current TLE, calculate/display a pass, compute Doppler correction, control a validated radio frequency path, log a receive-oriented pass and demonstrate Packet/APRS orchestration when supported by the selected satellite profile.
+
+See `docs/SATELLITE-OPERATIONS.md`.
+
+---
+
 # MVP validation matrix
 
 The MVP should prove architectural portability, not every possible combination.
@@ -592,7 +691,7 @@ Protocol/service
 └── APRS RX/TX + messaging baseline
 ```
 
-USB-native digital support is an official platform path and should be developed/validated early enough that it does not become an afterthought. The owned-hardware DigiRig path is now the first executable bench slice because the current lab does not yet contain a direct BLE KISS radio.
+The owned UV-PRO now provides the first executable direct BLE/KISS target. The DigiRig path remains the owned legacy/audio compatibility baseline. Satellite Operations is a planned high-value expansion and does not block the initial MVP.
 
 ---
 
@@ -626,48 +725,60 @@ F2 BLE         F14 USB/audio      F3 KISS
                                    F12 Winlink
 ```
 
-Platform expansion tracks proceed after the core abstractions are proven, with selective spikes allowed earlier:
+Platform expansion tracks:
 
 ```text
 F13 Profiles / Compatibility
-        ↓
-F15 RadioLink Bridge
-        ↓
-F16 RadioLink Ready
+        ├→ F15 RadioLink Bridge → F16 RadioLink Ready
+        │
+        └──────────────┐
+                       ↓
+F7 APRS ───────┐     F18 Satellite Operations
+F9 Control ────┼──────────────↑
+F1 Context ────┘
 
 F17 Labs / Research runs continuously in parallel.
 ```
+
+F18.1 pass prediction may start before the full radio stack is complete because it depends primarily on TLE + Location/Time providers. On-air Doppler/Packet milestones wait for validated F2/F9/F3/F4/F7 capabilities.
 
 ---
 
 # Immediate next action
 
-The next engineering step is now an owned-hardware vertical slice on macOS:
+The next engineering step is now a direct owned-hardware BLE vertical slice on macOS using the **BTECH UV-PRO**:
 
-1. use **DigiRig Mobile + Quansheng UV-K1 2 MB** as the first P0 radio/interface pair;
-2. enumerate the DigiRig USB audio/serial interfaces from `radiolink-cli` and expose layered diagnostics;
-3. establish RX audio/PTT path and a software-TNC provider;
-4. carry real KISS/AX.25 data into the shared core;
-5. capture and decode live APRS RX, then perform a controlled APRS TX validation;
-6. update the UV-K1 profile with exact firmware, cable, settings, calibration and evidence;
-7. reproduce the path with UV-K5 V3 as the second P0 profile;
-8. in parallel, acquire/borrow a **BTECH UV-Pro** or another validated BLE KISS reference for F2;
-9. identify one USB-native digital device/interface candidate for the direct Wired Digital path.
+1. record the UV-PRO's exact firmware/version and relevant radio settings;
+2. replace the `radiolink scan` placeholder with real macOS BLE discovery;
+3. discover the UV-PRO and capture advertised services/characteristics;
+4. map identity/control/KISS capabilities, comparing official BTECH documentation and HTCommander with actual bench behavior;
+5. implement `radiolink capabilities <device>` / equivalent diagnostics;
+6. connect the validated KISS path to `TncTransport` and the KISS parser;
+7. receive/decode real AX.25/APRS traffic, then perform controlled TX validation;
+8. map the frequency-control operations required by F9/F18 Doppler tuning;
+9. preserve the DigiRig + UV-K1/UV-K5 software-TNC path as the parallel compatibility baseline;
+10. begin F18.1 orbit/pass-prediction core independently once F1 `LocationProvider`/`TimeProvider` boundaries are ready.
 
-Current first PoC:
+Primary modern PoC:
 
 ```text
-macOS CLI ↔ USB/DigiRig ↔ audio/PTT ↔ software TNC ↔ UV-K1 ↔ RF
+macOS CLI ↔ BLE/KISS + control ↔ BTECH UV-PRO ↔ RF
 ```
 
-Parallel modern BLE target:
+Parallel compatibility PoC:
 
 ```text
-macOS CLI ↔ BLE KISS ↔ BTECH UV-Pro (candidate) ↔ RF
+macOS CLI ↔ USB/DigiRig ↔ audio/PTT ↔ software TNC ↔ UV-K1/UV-K5 ↔ RF
 ```
 
-Planned modern wired validation:
+Satellite target after control validation:
 
 ```text
-macOS CLI ↔ USB-C/USB KISS or serial/data ↔ Radio/TNC ↔ RF
+TLE + Location/Time → Satellite Engine → Doppler/Pass Planner
+                                      ↓
+                              Radio Control + KISS
+                                      ↓
+                                  BTECH UV-PRO
+                                      ↓
+                                      RF
 ```
