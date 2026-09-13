@@ -4,7 +4,7 @@
 
 Create a clean, open-source amateur-radio platform that turns a smartphone or computer into the main computing and interaction layer for digital radio operation.
 
-RadioLink should reduce integration friction rather than add another isolated radio application. The operator should think in terms of **messages, position, e-mail, stations, terminal sessions and radio state** while RadioLink resolves the required device, transport, TNC/modem provider and protocol stack underneath.
+RadioLink should reduce integration friction rather than add another isolated radio application. The operator should think in terms of **messages, position, e-mail, stations, terminal sessions, satellite passes and radio state** while RadioLink resolves the required device, transport, TNC/modem provider, context provider and protocol stack underneath.
 
 ## Core premise
 
@@ -16,6 +16,7 @@ RadioLink should reduce integration friction rather than add another isolated ra
 - **External hardware = optional compatibility layer, not the center of the system**
 - **One platform = multiple radio services/modules**
 - **CLI-first development = validation strategy, not a desktop-only product direction**
+- **Satellite Operations = orchestration of orbit/context/radio-control/protocol services, not a UV-PRO-specific subsystem**
 
 ## Product family
 
@@ -39,9 +40,10 @@ Shared domain/protocol/runtime components:
 - Capability Registry;
 - Device Registry;
 - Transport Manager;
+- Context Provider Registry;
 - TNC/Modem Provider abstraction;
 - KISS / AX.25 / APRS and future protocol services;
-- shared session, station and message state.
+- shared session, station, message and satellite-pass state.
 
 ### RadioLink Profiles
 
@@ -53,7 +55,25 @@ Tested compatibility knowledge for:
 - transports;
 - audio/PTT calibration;
 - capabilities;
-- supported modes and validated workflows.
+- supported modes and validated workflows;
+- satellite-specific control limits where relevant.
+
+### RadioLink Satellite Operations
+
+Planned high-value operational service for:
+
+- TLE management;
+- orbit propagation/pass prediction;
+- AOS/LOS;
+- azimuth/elevation/range;
+- pass planner and sky plot;
+- automatic Doppler correction through validated Radio Control capabilities;
+- satellite profiles for uplink/downlink/mode/tone/KISS/APRS settings;
+- satellite Packet/APRS workflows;
+- pass/QSO logging;
+- future two-radio, SDR, rotor and telemetry integration.
+
+The BTECH UV-PRO is the first owned hardware reference, not a hard dependency. See `SATELLITE-OPERATIONS.md`.
 
 ### RadioLink Bridge
 
@@ -73,6 +93,8 @@ Research area for ideas that should not expand the MVP until validated, includin
 - modern BBS/store-and-forward concepts;
 - offline radio knowledge tools;
 - additional digital modes and network transports.
+
+Satellite Operations has been promoted out of a generic Labs idea into a planned product track because it composes already-required RadioLink primitives: context, radio control, profiles, KISS/AX.25/APRS and logging.
 
 ## The three official I/O paths
 
@@ -134,9 +156,11 @@ Instead of requiring the normal user to choose low-level components such as Dire
 - Send e-mail;
 - View nearby stations;
 - Open Packet terminal;
+- Plan satellite pass;
+- Operate satellite pass;
 - Inspect diagnostics.
 
-Advanced users may still inspect the selected device/provider/transport pipeline.
+Advanced users may still inspect the selected device/provider/transport/context pipeline.
 
 ## Target user experience
 
@@ -144,7 +168,7 @@ Advanced users may still inspect the selected device/provider/transport pipeline
 2. Connect or discover a radio/TNC/interface.
 3. RadioLink identifies the actual capabilities and available transports.
 4. The user chooses what they want to do.
-5. The Operations Engine selects and starts a valid device → transport → provider → protocol pipeline.
+5. The Operations Engine selects and starts a valid device → transport → provider → protocol pipeline and resolves required context providers.
 6. If a transport drops, RadioLink attempts recovery or offers a compatible fallback without changing the service concept.
 
 Example diagnostic view:
@@ -161,7 +185,15 @@ APRS Messaging
 via conventional radio → DigiRig → USB Audio → software TNC → AX.25
 ```
 
-The user-facing service remains the same.
+Satellite example:
+
+```text
+Satellite Pass
+ISS profile → host LocationProvider + TimeProvider → Doppler Engine
+→ BTECH UV-PRO driver → BLE radio control / KISS
+```
+
+The user-facing service remains independent of the physical connection implementation.
 
 ## Primary use cases
 
@@ -176,6 +208,10 @@ The user-facing service remains the same.
 9. Run equivalent core functionality on Android, iOS, Linux and macOS.
 10. Use Linux/macOS in GUI or CLI/headless modes where practical.
 11. Reuse tested RadioLink Profiles for known-good hardware configurations.
+12. Predict and plan satellite passes from a validated location/time source.
+13. Apply Doppler correction through a capability-validated radio-control path.
+14. Reuse KISS/AX.25/APRS services for satellite Packet/APRS instead of creating a duplicate protocol stack.
+15. Record reproducible pass/QSO logs.
 
 ## Product principles
 
@@ -183,7 +219,7 @@ The user-facing service remains the same.
 Protocol, domain and orchestration logic should be shared whenever technically practical.
 
 ### 2. Mission-first UX
-Normal users should think in terms of outcomes such as messaging, position and e-mail. Protocol names remain visible for diagnostics and advanced workflows.
+Normal users should think in terms of outcomes such as messaging, position, e-mail and satellite passes. Protocol names remain visible for diagnostics and advanced workflows.
 
 ### 3. Transport independence
 No service should be hard-bound to Bluetooth, USB, audio, one radio model or one TNC implementation.
@@ -195,19 +231,22 @@ BLE is preferred for cable-free mobile workflows when reliable. USB-C/USB is equ
 Audio/PTT/CAT remains an official path through DigiRig-class interfaces, software TNCs and the future RadioLink Bridge.
 
 ### 6. Capability-driven hardware abstraction
-Common capabilities are exposed through device profiles/drivers rather than hard-coding one radio model into APRS/Packet/Winlink logic.
+Common capabilities are exposed through device profiles/drivers rather than hard-coding one radio model into APRS/Packet/Winlink/Satellite logic.
 
 ### 7. Operations Engine owns lifecycle
-Capability discovery, resource selection, service startup/shutdown, recovery and fallback belong to the runtime orchestration layer.
+Capability discovery, context resolution, resource selection, service startup/shutdown, recovery and fallback belong to the runtime orchestration layer.
 
 ### 8. Offline-first field operation
-Core RF functions and local state should not require an Internet connection.
+Core RF functions, pass prediction from cached/current TLE data and local state should not require an Internet connection. Online TLE refresh may improve freshness but must not be a hard requirement for an already prepared pass.
 
 ### 9. Progressive capability
-A BLE KISS device may expose Packet/APRS only; richer radios may add CAT/PTT/GPS/telemetry; an audio-only radio may still participate through a software TNC or Bridge.
+A BLE KISS device may expose Packet/APRS only; richer radios may add CAT/PTT/GPS/telemetry/frequency control; an audio-only radio may still participate through a software TNC or Bridge.
 
 ### 10. Stability over feature count
 The MVP should support a small number of reliable, well-tested workflows rather than many partially integrated modes.
+
+### 11. Satellite safety/capability separation
+Dual watch is not full duplex; frequency control is not permission to transmit; a Satellite Profile does not replace operator licensing or current operating data. Automatic Doppler/TX preparation must be gated by validated capabilities and explicit operational profiles.
 
 ## Initial module set
 
@@ -217,11 +256,16 @@ The MVP should support a small number of reliable, well-tested workflows rather 
 - Radio control;
 - Winlink after core Packet support.
 
+## Planned expansion
+
+- Satellite Operations — F18;
+- APRS-IS/iGate experiments;
+- richer device/profile ecosystem.
+
 ## Later modules / Labs candidates
 
 - SSTV;
 - selected digital modes;
-- APRS-IS/iGate experiments;
 - Mercury/other modem providers;
 - Reticulum / LoRa experiments;
 - modern BBS/store-and-forward concepts;
@@ -239,7 +283,7 @@ The MVP should support a small number of reliable, well-tested workflows rather 
 
 ## Candidate first validation hardware
 
-- BTECH UV-PRO-class embedded Bluetooth/TNC radio;
+- **BTECH UV-PRO — now lab available**, first direct BLE/KISS, radio-control and Satellite Operations reference;
 - Mobilinkd-class BLE KISS TNC;
 - DigiRig + conventional HT as a compatibility baseline;
 - one USB-native radio/interface path when available for validation.
@@ -259,6 +303,8 @@ The first platform MVP is successful when a normal user can:
 9. inspect raw KISS/AX.25 diagnostics when needed;
 10. reuse the same core protocol/service implementation across host platforms and transport paths.
 
+Satellite Operations is a planned post-MVP/high-value expansion and does not block this initial MVP definition.
+
 ## Non-goals for initial MVP
 
 - DMR networking;
@@ -268,4 +314,5 @@ The first platform MVP is successful when a normal user can:
 - hosting arbitrary Linux services;
 - supporting every radio brand from day one;
 - building the RadioLink Bridge before the software/device abstractions are validated;
+- implementing rotor/SDR/full-duplex satellite automation in the initial MVP;
 - turning Labs experiments into mandatory runtime dependencies.
