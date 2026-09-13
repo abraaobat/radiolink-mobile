@@ -6,6 +6,7 @@ This registry records specific hardware selected to prove RadioLink architecture
 
 | Device | Role | Initial class target | Current state | Immediate validation target |
 |---|---|---|---|---|
+| BTECH UV-PRO | first owned modern BLE/KISS + radio-control + satellite reference | Class A — Embedded BLE KISS/TNC reference | `LAB_AVAILABLE` | macOS CLI → Bluetooth discovery → service/characteristic capture → KISS RX/TX → radio control → Satellite Operations validation |
 | Quansheng UV-K1 2 MB | inexpensive conventional HT baseline | Class D — DigiRig/USB Audio + software TNC | `LAB_AVAILABLE` | macOS CLI → DigiRig → audio/PTT → software TNC → APRS/Packet |
 | Quansheng UV-K5 V3 | second conventional HT baseline | Class D — DigiRig/USB Audio + software TNC | `LAB_AVAILABLE` | reproduce same service through a second radio profile |
 | Baofeng UV-5 Mini | low-cost conventional HT compatibility target | Class D candidate | `LAB_AVAILABLE` | determine cable/audio/PTT profile and validate receive/transmit path |
@@ -13,11 +14,12 @@ This registry records specific hardware selected to prove RadioLink architecture
 
 Capabilities in the P0 profiles remain `UNVERIFIED` until bench testing. Physical possession is evidence only of lab availability.
 
+The UV-PRO has a dedicated profile at [`profiles/btech-uv-pro.md`](profiles/btech-uv-pro.md). Manufacturer documentation is sufficient to make it a research/reference target, but not to mark RadioLink support before the exact lab unit/firmware is validated.
+
 ## P1 — Reference targets
 
 | Device | Why it matters | Architectural role | Current state |
 |---|---|---|---|
-| BTECH UV-Pro | research evidence shows the value of phone + embedded Bluetooth TNC/APRS workflow | Class A — Embedded BLE KISS/TNC reference | `CANDIDATE` |
 | VGC/Vero VR-N76 family | useful firmware-aware BLE/TNC reference; research shows service capability can change by firmware | Class A + firmware-aware profile reference | `CANDIDATE` |
 | Kenwood TH-D75 | strong multi-transport example: KISS/TNC over Bluetooth while GPS/context may use USB | Class G — Multi-transport/composite device | `CANDIDATE` |
 
@@ -48,7 +50,21 @@ These are not radios but are important to the validation matrix:
 |---|---|---|
 | DigiRig Mobile | current USB audio/PTT/serial-class lab interface for conventional radios | `LAB_AVAILABLE` |
 | Mobilinkd TNC4 | external BLE KISS TNC architectural/interoperability reference | `RESEARCHED` |
-| RadioLink Bridge | future BLE + USB-C + KISS/audio/PTT/CAT-capable accessory hypothesis | `PLANNED` |
+| RadioLink Bridge / RadioNode-BR path | future BLE + USB-C + KISS/audio/PTT/CAT-capable accessory hypothesis | `PLANNED` |
+
+## Satellite reference requirements
+
+Satellite validation introduces additional capability facts that must be tracked separately from generic Bluetooth/KISS support:
+
+- frequency read/control;
+- independent RX/TX frequency control or split support;
+- mode/bandwidth/tone control where exposed;
+- KISS/TNC availability for satellite Packet/APRS;
+- radio/context GPS exposure where available;
+- dual-watch state;
+- **full-duplex/simultaneous RX-TX as an independent verified capability**.
+
+Dual watch must never be promoted to a full-duplex claim without bench evidence.
 
 ## Promotion rule
 
@@ -60,6 +76,9 @@ device + firmware + host + transport + interface/cable + provider + service
 
 Examples of separate claims:
 
+- `UV-PRO + firmware X + macOS + BLE KISS + APRS RX`;
+- `UV-PRO + firmware X + macOS + BLE control + Doppler tuning`;
+- `UV-PRO + firmware X + satellite profile + receive-oriented pass validation`;
 - `UV-K1 + DigiRig + macOS + software TNC + APRS RX`;
 - `UV-K1 + DigiRig + macOS + software TNC + APRS TX`;
 - `TH-D75 + BLE + KISS + APRS`;
@@ -73,6 +92,8 @@ Primary source-derived reference-device evidence is recorded in:
 
 - `docs/research/KM4ACK-DEEP-MINING.md`;
 - `docs/research/EVIDENCE.md`;
-- `docs/research/SYNTHESIS.md`.
+- `docs/research/SYNTHESIS.md`;
+- `docs/REFERENCES.md`;
+- `docs/SATELLITE-OPERATIONS.md`.
 
 The current P0 inventory is a lab-planning input and must be validated experimentally.
