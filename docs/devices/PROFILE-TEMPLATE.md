@@ -44,6 +44,11 @@ Describe why this device is in the registry and which architectural path it shou
 | Capability | State | Provider/path | Notes |
 |---|---|---|---|
 | CAT/radio control | UNVERIFIED | | |
+| Frequency read/control | UNVERIFIED | | |
+| Independent RX/TX / split | UNVERIFIED | | |
+| Mode/bandwidth control | UNVERIFIED | | |
+| Tone/signaling control | UNVERIFIED | | |
+| TX power control | UNVERIFIED | | |
 | Audio RX | UNVERIFIED | | |
 | Audio TX | UNVERIFIED | | |
 | PTT | UNVERIFIED | | |
@@ -52,8 +57,10 @@ Describe why this device is in the registry and which architectural path it shou
 | Embedded TNC | UNVERIFIED | | |
 | GPS/GNSS | UNVERIFIED | | |
 | Telemetry | UNVERIFIED | | |
+| Dual watch / Main-Sub | UNVERIFIED | | Do not infer full duplex. |
+| Full duplex / simultaneous RX while TX | UNVERIFIED | | Requires explicit bench evidence. |
 
-Do not infer capabilities from the presence of Bluetooth or USB.
+Do not infer capabilities from the presence of Bluetooth or USB. Do not infer full duplex from dual watch, Main/Sub display or two programmable channels.
 
 ## Context providers
 
@@ -63,6 +70,23 @@ Record context separately from radio capabilities.
 |---|---|---|---|
 | Location | Host / radio / USB GPS / GPSD / manual / other | UNVERIFIED | |
 | Time | system / GNSS / network / other | UNVERIFIED | |
+
+## Satellite Operations observations
+
+Complete this section only when the device is being evaluated for satellite workflows.
+
+| Satellite capability / role | State | Notes |
+|---|---|---|
+| Satellite mode/profile support | UNVERIFIED | |
+| Pass-data display/control | UNVERIFIED | |
+| Doppler tuning control path | UNVERIFIED | |
+| Independent uplink/downlink correction | UNVERIFIED | |
+| Satellite Packet/APRS path | UNVERIFIED | |
+| Receive-only pass validation | UNVERIFIED | |
+| Full-duplex satellite operation | UNVERIFIED | Must not be inferred from dual watch. |
+| Two-radio / SDR composition | UNVERIFIED | Usually an Operations Engine composition rather than one-device capability. |
+
+When recording a satellite test, capture the satellite profile, TLE epoch/source, observer context provider, radio firmware, host, transport, control path and whether TX was used.
 
 ## Required radio-side settings / preflight recipe
 
@@ -87,6 +111,9 @@ When applicable:
 | Packet/AX.25 | UNVERIFIED | UNVERIFIED | | |
 | Winlink | UNVERIFIED | UNVERIFIED | | |
 | Radio control | UNVERIFIED | N/A | | |
+| Satellite pass planning | UNVERIFIED | N/A | | |
+| Satellite Doppler control | UNVERIFIED | UNVERIFIED | | |
+| Satellite Packet/APRS | UNVERIFIED | UNVERIFIED | | |
 | Diagnostics | UNVERIFIED | N/A | | |
 
 ## Layered diagnostics result
@@ -119,6 +146,7 @@ service readiness
 - screenshots/photos if useful:
 - research source links:
 - related evidence IDs (`EV-*`):
+- satellite profile/TLE epoch where applicable:
 
 ## Known limitations / quirks
 
