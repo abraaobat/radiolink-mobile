@@ -12,6 +12,7 @@ RadioLink should preserve the convenience of selecting multiple amateur-radio fu
 4. **Bluetooth/BLE KISS preferred; Direwolf + DigiRig supported as the universal desktop fallback.**
 5. Features that only administer the Raspberry Pi itself are not product priorities for RadioLink.
 6. A DigiPi feature can map to a native RadioLink module, an integration with an external engine, or be intentionally omitted.
+7. DigiPi is a baseline, not a ceiling: RadioLink may add coherent capabilities such as Satellite Operations when they reuse the same core abstractions.
 
 ## Priority legend
 
@@ -26,7 +27,7 @@ RadioLink should preserve the convenience of selecting multiple amateur-radio fu
 |---|---|---:|---|---|
 | APRS TNC/iGate | APRS module + optional APRS-IS/iGate service | P0/P1 | Shared APRS core over generic `TncTransport`; iGate after RF APRS is stable | Planned |
 | APRS TNC/Digipeater | APRS Digipeater mode | P1 | Shared AX.25/APRS core; capability-gated TX | Planned |
-| APRS GPS Tracker | APRS Tracker | P0 | Host GPS/location + beacon scheduler + APRS encoder | Planned |
+| APRS GPS Tracker | APRS Tracker | P0 | Context-provider location + beacon scheduler + APRS encoder | Planned |
 | APRS WebChat | APRS Messaging | P0 | Chat-like UI backed by APRS messaging/ACK model | Planned |
 | APRS HF TNC/iGate | APRS HF mode | P2 | Audio/software-modem or supported external modem engine | Exploration |
 | AX.25 Node Network | Packet/AX.25 module | P1 | Connected-mode AX.25, node/BBS interoperability | Planned |
@@ -57,9 +58,9 @@ RadioLink should preserve the convenience of selecting multiple amateur-radio fu
 | Webchat | APRS Messaging | P0 | Native module |
 | Audio | Audio device diagnostics | P1 | Needed for DigiRig/software-TNC path |
 | SysInfo | RadioLink diagnostics | P1 | App/device diagnostics only, not full OS administration |
-| GPS | Location service | P0 | Native host location adapter |
+| GPS | Context/Location service | P0 | Native host/radio/USB provider abstraction |
 | Bluetooth | Device manager / capabilities | P0 | Native RadioLink device layer |
-| Map | APRS/map module | P0 | Native map/station view |
+| Map | APRS/map + future satellite map views | P0/P1 | Shared map foundations |
 | Refresh | Hub/device state refresh | P0 | Normal application behavior |
 | Initialize | Onboarding/device setup | P0 | Guided setup, not Linux initialization |
 | Restart | App/service restart if needed | N/A/P1 | No machine restart control required |
@@ -104,8 +105,16 @@ RadioLink
 │   ├── Telnet
 │   ├── Packet
 │   └── ARDOP
-└── Radio Control
+├── Radio Control
+└── Satellite Operations
+    ├── TLE / passes
+    ├── Doppler
+    ├── sky plot / pass planner
+    ├── satellite Packet/APRS
+    └── pass/QSO logging
 ```
+
+Satellite Operations is a **RadioLink-native expansion beyond the DigiPi 2.2-1 screenshot benchmark**. It is included because the same platform abstractions already needed for APRS, Radio Control, GPS/context, mapping and KISS/Packet make it a coherent high-value service.
 
 ### Group C — Digital-mode expansion (P2)
 
@@ -130,12 +139,14 @@ The compatibility goal is therefore expressed as:
 
 > **Does RadioLink run the exact same Linux program?**
 
+RadioLink may also exceed the benchmark when a new operation cleanly composes existing platform services. Satellite Operations is the first explicitly documented example.
+
 ## Benchmark milestone levels
 
 ### Level 1 — Packet/APRS parity baseline
 - BLE KISS and software-TNC backends
 - APRS receive/transmit
-- GPS tracker
+- GPS/context tracker
 - map
 - APRS messaging
 - KISS/Packet logs
@@ -147,6 +158,7 @@ The compatibility goal is therefore expressed as:
 - Packet terminal
 - Winlink Telnet/Packet
 - radio-control module
+- Satellite pass prediction/Doppler baseline after radio-control validation
 
 ### Level 3 — DigiPi-class digital hub expansion
 - ARDOP
@@ -155,7 +167,10 @@ The compatibility goal is therefore expressed as:
 - JS8
 - FLDigi-class modes
 - selected HF modem integrations
+- advanced satellite two-radio/SDR/rotator/telemetry extensions
 
 ## Reference
 
 Source benchmark: DigiPi 2.2-1 application hub screenshot supplied during RadioLink product design, September 2026.
+
+Satellite design: see [`SATELLITE-OPERATIONS.md`](SATELLITE-OPERATIONS.md).
