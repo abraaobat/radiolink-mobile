@@ -17,10 +17,11 @@ RadioLink's goal is not to add another isolated radio application. It provides o
 - send e-mail;
 - view stations;
 - open a Packet terminal;
+- plan and operate a satellite pass;
 - inspect diagnostics;
 - control the radio where supported.
 
-The platform decides which device, transport, TNC/modem provider and protocol stack can satisfy that operation.
+The platform decides which device, transport, TNC/modem provider, context provider and protocol stack can satisfy that operation.
 
 ## Target platforms
 
@@ -74,12 +75,16 @@ RadioLink Platform
 │   ├── Operations Engine
 │   ├── Capability Registry
 │   ├── Device Registry
+│   ├── Context Providers
 │   ├── Transport Manager
 │   ├── TNC/Modem Providers
 │   └── Protocol/Service Core
 │
 ├── RadioLink Profiles
 │   └── tested radios / cables / interfaces / settings
+│
+├── RadioLink Satellite Operations
+│   └── TLE / passes / Doppler / radio control / satellite Packet/APRS
 │
 ├── RadioLink Bridge
 │   └── future BLE + USB-C adapter/TNC for conventional radios
@@ -111,7 +116,26 @@ User action / Application UX
             RF
 ```
 
-No APRS, Packet or Winlink service should depend directly on Bluetooth, USB, Direwolf, one radio model or one TNC implementation.
+Satellite Operations composes existing services instead of bypassing them:
+
+```text
+TLE + Location + Time
+          ↓
+   Satellite Engine
+   ├── Pass Predictor
+   ├── Doppler Engine
+   └── Satellite Profile
+          ↓
+   Operations Engine
+     ┌────┴────┐
+     ↓         ↓
+Radio Control KISS/APRS
+     └────┬────┘
+          ↓
+       Radio/TNC
+```
+
+No APRS, Packet, Winlink or Satellite service should depend directly on Bluetooth, USB, Direwolf, one radio model or one TNC implementation.
 
 ## Shared Core toolchain
 
@@ -136,6 +160,9 @@ Platform-specific Bluetooth, USB, UI, location, permissions and background behav
 - KISS diagnostics
 - Radio Control
 - Winlink after the Packet path is stable
+- Satellite Operations as a planned cross-service expansion after the required radio-control/context foundations are validated
+
+Satellite Operations includes TLE/pass prediction, AOS/LOS, azimuth/elevation, pass planning, Doppler control, satellite profiles, Packet/APRS orchestration and later two-radio/SDR/rotator expansion. See [Satellite Operations](docs/SATELLITE-OPERATIONS.md).
 
 Future research/modules stay in Labs until they justify promotion into the product core.
 
@@ -146,12 +173,13 @@ RadioLink uses external projects as engineering references with clearly separate
 - **DigiPi** — functional coverage and integrated-operation benchmark.
 - **Mobilinkd TNC4** — BLE KISS TNC / portable radio-interface benchmark.
 - **HTCommander** — Bluetooth radio integration, device-control and driver/protocol reference.
+- **BTECH UV-PRO official app/firmware** — first owned BLE/KISS and Satellite Operations behavior/reference target; bench validation remains required.
 - **EmComm Tools / ETC** — operational-mode orchestration, lifecycle and zero-configuration reference.
 - **Mercury** — example of a modem/provider implementation that benefits from a compatible, decoupled interface.
 
 These are references, not runtime dependencies or wholesale architectural templates.
 
-See [Technical References](docs/REFERENCES.md) and [DigiPi 2.2-1 → RadioLink Functional Benchmark](docs/DIGIPI-BENCHMARK.md).
+See [Technical References](docs/REFERENCES.md), [DigiPi 2.2-1 → RadioLink Functional Benchmark](docs/DIGIPI-BENCHMARK.md) and [Satellite Operations](docs/SATELLITE-OPERATIONS.md).
 
 ## Repository
 
@@ -183,12 +211,12 @@ The repository keeps its current GitHub name for continuity; the product umbrell
 
 ## Current phase
 
-**F0/F1 — Platform Foundation + Shared Core/Operations abstractions**
+**F0/F1 — Platform Foundation + Shared Core/Operations abstractions**, with F2 BLE integration now able to use the owned **BTECH UV-PRO** as the first direct modern-radio lab target.
 
 The Rust shared core and CLI bootstrap are in place. The immediate engineering path is to prove a real hardware vertical slice through the common abstractions:
 
 ```text
-macOS CLI ↔ BLE KISS ↔ Radio/TNC ↔ RF
+macOS CLI ↔ BLE KISS ↔ BTECH UV-PRO ↔ RF
 ```
 
 with a parallel compatibility baseline:
@@ -197,6 +225,6 @@ with a parallel compatibility baseline:
 macOS CLI ↔ software TNC ↔ DigiRig/USB audio/PTT ↔ conventional radio ↔ RF
 ```
 
-and early validation of a USB-native digital path.
+The UV-PRO also becomes the first hardware reference for future **F18 Satellite Operations**, after its exact firmware, Bluetooth services, KISS path and radio-control capabilities are captured and validated.
 
-See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [Technical References](docs/REFERENCES.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), [ADR-0002](docs/adr/ADR-0002-cross-platform-app-hub.md), [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md) and [ADR-0004](docs/adr/ADR-0004-three-path-io-and-platform-ecosystem.md).
+See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [Satellite Operations](docs/SATELLITE-OPERATIONS.md), [Technical References](docs/REFERENCES.md), [UV-PRO Profile](docs/devices/profiles/btech-uv-pro.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), [ADR-0002](docs/adr/ADR-0002-cross-platform-app-hub.md), [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md) and [ADR-0004](docs/adr/ADR-0004-three-path-io-and-platform-ecosystem.md).
