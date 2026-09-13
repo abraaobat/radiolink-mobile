@@ -29,6 +29,12 @@ Legacy / Analog Bridge
 
 A single device may expose more than one family at the same time.
 
+Planned LoRa mesh support does not create a fourth host I/O family. RadioLink reaches a local mesh node through BLE or USB; the node exposes a separate mesh-network capability on its radio side.
+
+```text
+Host ↔ BLE/USB ↔ Meshtastic-compatible node ↔ LoRa mesh
+```
+
 ## Capability checklist
 
 Each supported device/profile should document independent transport and capability flags.
@@ -40,6 +46,7 @@ Transports
 [ ] Serial
 [ ] Audio
 [ ] Network/IP where applicable
+[ ] LoRa RF
 
 Capabilities
 [ ] CAT / radio control
@@ -60,6 +67,10 @@ Capabilities
 [ ] USB serial/CAT
 [ ] Dual watch / Main-Sub monitoring
 [ ] Full duplex / simultaneous RX while TX
+[ ] Mesh client/provider
+[ ] Mesh routing/rebroadcasting in node
+[ ] Meshtastic interoperability
+[ ] TAK/CoT relay or codec subset
 ```
 
 Location/time used by an application are modeled separately through Context Providers. A radio may expose GPS/GNSS data, but `location` is not assumed to be owned by the radio.
@@ -164,6 +175,24 @@ Host / RadioLink
 RadioLink should compose these capabilities through the Device Registry, Capability Registry, Context Provider Registry and Transport Manager rather than forcing the device into a single transport class.
 
 This composition is especially useful for satellite workflows, where RF/TNC, radio control, location and even downlink monitoring may come from different devices/providers.
+### Class H — Meshtastic-compatible LoRa companion node
+
+Off-grid mesh delivery path.
+
+```text
+Host ↔ BLE/USB ↔ LoRa node ↔ Meshtastic mesh
+```
+
+Typical characteristics:
+
+- BLE and/or USB host connection;
+- LoRa RF and mesh routing implemented in node firmware;
+- compact text, position, telemetry and supported application payloads;
+- optional TAK/CoT-compatible payload mapping;
+- payload, airtime, queue and hop constraints independent from host CPU;
+- continued mesh participation while the host app is suspended or disconnected.
+
+This class is not automatically a KISS TNC and does not imply AX.25/APRS RF capability. A future RadioNode-BR/RadioLink Bridge variant may implement both Class C/D-style TNC capabilities and Class H mesh capabilities, but the providers remain independent.
 
 ## TNC/Modem Provider mapping
 
@@ -176,6 +205,17 @@ This composition is especially useful for satellite workflows, where RF/TNC, rad
 | Bluetooth CAT-only radio | none | Control only |
 | Bluetooth audio/PTT radio | host if viable | Software TNC / experimental |
 | RadioLink Bridge + conventional radio | Bridge | Hardware/embedded provider over BLE or USB-C |
+
+## Mesh / Network Provider mapping
+
+| Hardware/network path | Routing/provider location | RadioLink provider |
+|---|---|---|
+| Meshtastic-compatible node over BLE | external LoRa node | Mesh Provider / Meshtastic BLE adapter |
+| Meshtastic-compatible node over USB | external LoRa node | Mesh Provider / Meshtastic USB adapter |
+| IP network / TAK Server | host/network/server | Network Provider / supported CoT transport |
+| Future combined RadioNode-BR/Bridge | external accessory | independent Mesh Provider plus TNC/Modem Provider capabilities |
+
+Mesh traffic must not be forced through the TNC/Modem Provider interface. Host-to-node BLE/USB connection lifecycle still uses the Transport Manager.
 
 ## Context Provider mapping
 
@@ -249,6 +289,12 @@ Every device/profile should document, where applicable:
 - PTT mechanism;
 - KISS availability;
 - embedded TNC availability;
+- LoRa/mesh capability and regional RF configuration;
+- Meshtastic protocol/firmware compatibility range;
+- node role, channel and rebroadcast behavior where relevant;
+- supported mesh application/event types;
+- mesh payload/fragmentation, acknowledgement and queue behavior;
+- TAK/CoT interoperability subset where available;
 - radio GPS/GNSS/telemetry exposure;
 - dual-watch state separately from full-duplex evidence;
 - cable/interface requirements;
@@ -304,8 +350,15 @@ Satellite validation should record the exact satellite profile/TLE epoch and whe
 11. Automatic Doppler control must be enabled only when the exact radio-control capability/path has been validated.
 12. Satellite TX configuration must remain profile- and operator-gated; RadioLink must not infer that a technically tunable frequency is legally or operationally valid for transmission.
 
+13. A LoRa mesh node is not automatically a KISS TNC or an AX.25/APRS radio.
+14. Mesh routing/rebroadcasting belongs to the external node for the initial Meshtastic provider.
+15. Mesh providers must expose supported event types, payload/fragmentation limits and delivery semantics.
+16. Maps, high-resolution imagery, video, real-time audio and unrestricted large files must not be selected for normal LoRa delivery.
+17. TAK/CoT support is declared by event/codec subset and reference interoperability result, never as an all-or-nothing marketing flag.
+18. Bridges between mesh, APRS and IP/TAK networks require explicit policy, filtering, deduplication and loop prevention.
+
 ## Rule of thumb
 
-> **Transport tells RadioLink how it may connect. Capabilities tell RadioLink what it can actually do. Context Providers tell services where operational data such as location/time comes from. Satellite Profiles tell the Satellite Engine how to orchestrate those capabilities for a specific spacecraft/service.**
+> **Transport tells RadioLink how it may connect. Capabilities tell RadioLink what it can actually do. Context Providers supply operational data such as location/time. Satellite Profiles describe how those capabilities are orchestrated for a spacecraft/service. Delivery Providers describe where an event can go and under which payload, airtime and security constraints.**
 
 RadioLink must never infer one from the other.

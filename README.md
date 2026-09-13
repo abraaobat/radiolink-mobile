@@ -1,6 +1,6 @@
 # RadioLink Platform
 
-**Cross-platform amateur-radio platform for smartphones and computers, with BLE, USB and legacy audio/PTT support.**
+**Cross-platform amateur-radio platform for smartphones and computers, with BLE, USB, legacy audio/PTT, planned Meshtastic mesh and TAK-compatible situational awareness.**
 
 RadioLink is an open-source platform for Android, iOS, Linux and macOS that turns the user's existing phone or computer into the main computing and interaction layer for digital radio operation.
 
@@ -16,6 +16,7 @@ RadioLink's goal is not to add another isolated radio application. It provides o
 - share position;
 - send e-mail;
 - view stations;
+- coordinate an off-grid team on a shared map;
 - open a Packet terminal;
 - plan and operate a satellite pass;
 - inspect diagnostics;
@@ -78,7 +79,13 @@ RadioLink Platform
 │   ├── Context Providers
 │   ├── Transport Manager
 │   ├── TNC/Modem Providers
+│   ├── Mesh/Network Providers
 │   └── Protocol/Service Core
+│
+├── RadioLink Mesh + Situational
+│   ├── Meshtastic-compatible mesh
+│   ├── Offline map / team coordination
+│   └── CoT/TAK interoperability
 │
 ├── RadioLink Profiles
 │   └── tested radios / cables / interfaces / settings
@@ -93,7 +100,7 @@ RadioLink Platform
 │   └── future interoperability profile/specification
 │
 └── RadioLink Labs
-    └── Winlink/Mercury, Reticulum, LoRa, BBS and other research
+    └── Winlink/Mercury, Reticulum, alternative mesh, BBS and other research
 ```
 
 ## Architecture
@@ -103,17 +110,17 @@ User action / Application UX
             ↓
      Operational Service
             ↓
-          Protocol
+    Protocol / Event Model
             ↓
-    TNC / Modem Provider
+ TNC / Mesh / Network Provider
             ↓
      Transport Manager
        /      |       \
      BLE     USB    Audio/PTT
        \      |       /
-          Device
+     Device / Node / Server
             ↓
-            RF
+        RF / Mesh / IP
 ```
 
 Satellite Operations composes existing services instead of bypassing them:
@@ -136,6 +143,7 @@ Radio Control KISS/APRS
 ```
 
 No APRS, Packet, Winlink or Satellite service should depend directly on Bluetooth, USB, Direwolf, one radio model or one TNC implementation.
+No APRS, Packet, Winlink, Mesh or Situational service should depend directly on Bluetooth, USB, Direwolf, one radio model, one TNC implementation or one network provider.
 
 ## Shared Core toolchain
 
@@ -164,7 +172,15 @@ Platform-specific Bluetooth, USB, UI, location, permissions and background behav
 
 Satellite Operations includes TLE/pass prediction, AOS/LOS, azimuth/elevation, pass planning, Doppler control, satellite profiles, Packet/APRS orchestration and later two-radio/SDR/rotator expansion. See [Satellite Operations](docs/SATELLITE-OPERATIONS.md).
 
-Future research/modules stay in Labs until they justify promotion into the product core.
+Planned post-MVP expansion:
+
+- Meshtastic-compatible mesh messaging, position and telemetry;
+- offline situational map with teams, chat, markers, routes and alerts;
+- a documented CoT subset and optional TAK Server interoperability.
+
+The external LoRa node owns mesh routing/rebroadcasting. The host remains responsible for UI, maps, state and explicit bridging, keeping the mobile workload lightweight. Low-bandwidth mesh carries compact events, not base maps, video or unrestricted large files.
+
+Other future research/modules stay in Labs until they justify promotion into the product core.
 
 ## Reference projects
 
@@ -174,12 +190,15 @@ RadioLink uses external projects as engineering references with clearly separate
 - **Mobilinkd TNC4** — BLE KISS TNC / portable radio-interface benchmark.
 - **HTCommander** — Bluetooth radio integration, device-control and driver/protocol reference.
 - **BTECH UV-PRO official app/firmware** — first owned BLE/KISS and Satellite Operations behavior/reference target; bench validation remains required.
+- **Meshtastic** — decentralized low-power LoRa mesh and node/client interoperability reference.
+- **TAK / ATAK-CIV** — moving-map, CoT event and situational-interoperability reference.
 - **EmComm Tools / ETC** — operational-mode orchestration, lifecycle and zero-configuration reference.
 - **Mercury** — example of a modem/provider implementation that benefits from a compatible, decoupled interface.
 
 These are references, not runtime dependencies or wholesale architectural templates.
 
 See [Technical References](docs/REFERENCES.md), [DigiPi 2.2-1 → RadioLink Functional Benchmark](docs/DIGIPI-BENCHMARK.md) and [Satellite Operations](docs/SATELLITE-OPERATIONS.md).
+See [Technical References](docs/REFERENCES.md), [Mesh + Situational Awareness](docs/MESH-AND-SITUATIONAL-AWARENESS.md) and [DigiPi 2.2-1 → RadioLink Functional Benchmark](docs/DIGIPI-BENCHMARK.md).
 
 ## Repository
 
@@ -228,3 +247,4 @@ macOS CLI ↔ software TNC ↔ DigiRig/USB audio/PTT ↔ conventional radio ↔ 
 The UV-PRO also becomes the first hardware reference for future **F18 Satellite Operations**, after its exact firmware, Bluetooth services, KISS path and radio-control capabilities are captured and validated.
 
 See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [Satellite Operations](docs/SATELLITE-OPERATIONS.md), [Technical References](docs/REFERENCES.md), [UV-PRO Profile](docs/devices/profiles/btech-uv-pro.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), [ADR-0002](docs/adr/ADR-0002-cross-platform-app-hub.md), [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md) and [ADR-0004](docs/adr/ADR-0004-three-path-io-and-platform-ecosystem.md).
+See [Roadmap](docs/ROADMAP.md), [Product](docs/PRODUCT.md), [Architecture](docs/ARCHITECTURE.md), [Compatibility Matrix](docs/COMPATIBILITY.md), [Technical References](docs/REFERENCES.md), [Mesh + Situational Awareness](docs/MESH-AND-SITUATIONAL-AWARENESS.md), [ADR-0001](docs/adr/ADR-0001-smartphone-first-bluetooth-first.md), [ADR-0002](docs/adr/ADR-0002-cross-platform-app-hub.md), [ADR-0003](docs/adr/ADR-0003-rust-shared-core.md), [ADR-0004](docs/adr/ADR-0004-three-path-io-and-platform-ecosystem.md), [ADR-0005](docs/adr/ADR-0005-context-providers-and-layered-diagnostics.md) and [ADR-0006](docs/adr/ADR-0006-mesh-and-tak-situational-awareness.md).

@@ -38,6 +38,7 @@ Describe why this device is in the registry and which architectural path it shou
 | Serial | UNVERIFIED | UNVERIFIED | |
 | Audio | UNVERIFIED | UNVERIFIED | |
 | Network/IP | UNVERIFIED | UNVERIFIED | |
+| LoRa RF | UNVERIFIED | UNVERIFIED | |
 
 ## Capability observations
 
@@ -59,6 +60,10 @@ Describe why this device is in the registry and which architectural path it shou
 | Telemetry | UNVERIFIED | | |
 | Dual watch / Main-Sub | UNVERIFIED | | Do not infer full duplex. |
 | Full duplex / simultaneous RX while TX | UNVERIFIED | | Requires explicit bench evidence. |
+| Mesh client/provider | UNVERIFIED | | |
+| Mesh routing/rebroadcasting | UNVERIFIED | external node / host / N/A | |
+| Meshtastic interoperability | UNVERIFIED | | |
+| TAK/CoT relay or codec subset | UNVERIFIED | | |
 
 Do not infer capabilities from the presence of Bluetooth or USB. Do not infer full duplex from dual watch, Main/Sub display or two programmable channels.
 
@@ -114,7 +119,24 @@ When applicable:
 | Satellite pass planning | UNVERIFIED | N/A | | |
 | Satellite Doppler control | UNVERIFIED | UNVERIFIED | | |
 | Satellite Packet/APRS | UNVERIFIED | UNVERIFIED | | |
+| Mesh text/position | UNVERIFIED | UNVERIFIED | | |
+| Situational events | UNVERIFIED | UNVERIFIED | | |
+| CoT/TAK interoperability | UNVERIFIED | UNVERIFIED | | |
 | Diagnostics | UNVERIFIED | N/A | | |
+
+## Mesh/delivery constraints
+
+When applicable:
+
+- **Protocol/firmware compatibility range:** `UNVERIFIED`
+- **Region/frequency configuration:** `UNVERIFIED`
+- **Node role/rebroadcast behavior:** `UNVERIFIED`
+- **Supported event/application types:** `UNVERIFIED`
+- **Payload/fragmentation behavior:** `UNVERIFIED`
+- **Acknowledgement/delivery semantics:** `UNVERIFIED`
+- **Queue/channel-utilization visibility:** `UNVERIFIED`
+- **Host-independent mesh participation:** `UNVERIFIED`
+- **Declared TAK/CoT subset:** `UNVERIFIED`
 
 ## Layered diagnostics result
 
@@ -129,7 +151,7 @@ logical interfaces
   ↓
 capability match
   ↓
-provider/TNC/context handshake
+provider/TNC/mesh/context handshake
   ↓
 protocol traffic
   ↓

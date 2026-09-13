@@ -5,6 +5,7 @@
 Create a clean, open-source amateur-radio platform that turns a smartphone or computer into the main computing and interaction layer for digital radio operation.
 
 RadioLink should reduce integration friction rather than add another isolated radio application. The operator should think in terms of **messages, position, e-mail, stations, terminal sessions, satellite passes and radio state** while RadioLink resolves the required device, transport, TNC/modem provider, context provider and protocol stack underneath.
+RadioLink should reduce integration friction rather than add another isolated radio application. The operator should think in terms of **messages, position, e-mail, stations, team maps, alerts, terminal sessions and radio state** while RadioLink resolves the required device, transport, delivery provider and protocol/event stack underneath.
 
 ## Core premise
 
@@ -17,6 +18,8 @@ RadioLink should reduce integration friction rather than add another isolated ra
 - **One platform = multiple radio services/modules**
 - **CLI-first development = validation strategy, not a desktop-only product direction**
 - **Satellite Operations = orchestration of orbit/context/radio-control/protocol services, not a UV-PRO-specific subsystem**
+- **Mesh routing = external-node responsibility; host applications remain lightweight clients**
+- **TAK/CoT = interoperability and event modeling, not a requirement to embed or clone ATAK**
 
 ## Product family
 
@@ -42,8 +45,10 @@ Shared domain/protocol/runtime components:
 - Transport Manager;
 - Context Provider Registry;
 - TNC/Modem Provider abstraction;
+- Mesh/Network Provider abstraction;
 - KISS / AX.25 / APRS and future protocol services;
 - shared session, station, message and satellite-pass state.
+- shared session, station, message and situational-event state.
 
 ### RadioLink Profiles
 
@@ -83,13 +88,33 @@ Future optional accessory for radios without smartphone-friendly digital interfa
 
 Future documented interoperability profile/specification for radios and accessories that expose capabilities in a RadioLink-friendly, standards-oriented way.
 
+### RadioLink Mesh
+
+Planned post-MVP provider layer for resilient off-grid mesh communication, beginning with Meshtastic interoperability through BLE/USB-connected LoRa nodes.
+
+The external node owns RF routing/rebroadcasting. RadioLink owns the operator experience, state, diagnostics and optional explicit bridges.
+
+### RadioLink Situational
+
+Planned offline-first coordination module providing:
+
+- map and participant positions;
+- chat;
+- markers and points of interest;
+- routes and simple shapes;
+- alerts/emergencies;
+- event history;
+- optional CoT/TAK interoperability.
+
+RadioLink Situational is not a full ATAK clone. It adopts the relevant cross-platform field workflows and supports a documented interoperable subset.
+
 ### RadioLink Labs
 
 Research area for ideas that should not expand the MVP until validated, including:
 
 - Winlink/Mercury experiments beyond the core Packet path;
 - Reticulum;
-- LoRa;
+- alternative mesh/routing protocols beyond the Meshtastic-first plan;
 - modern BBS/store-and-forward concepts;
 - offline radio knowledge tools;
 - additional digital modes and network transports.
@@ -155,6 +180,8 @@ Instead of requiring the normal user to choose low-level components such as Dire
 - Share position;
 - Send e-mail;
 - View nearby stations;
+- View team map;
+- Place marker or alert;
 - Open Packet terminal;
 - Plan satellite pass;
 - Operate satellite pass;
@@ -212,6 +239,10 @@ The user-facing service remains independent of the physical connection implement
 13. Apply Doppler correction through a capability-validated radio-control path.
 14. Reuse KISS/AX.25/APRS services for satellite Packet/APRS instead of creating a duplicate protocol stack.
 15. Record reproducible pass/QSO logs.
+12. Exchange text, position and telemetry through a Meshtastic-compatible LoRa mesh after the initial MVP.
+13. View team members, messages, markers, routes and alerts on an offline situational map.
+14. Exchange a documented subset of CoT events with TAK-compatible clients/servers where supported.
+15. Select a delivery provider according to event type, payload size, connectivity, battery and operator policy.
 
 ## Product principles
 
@@ -247,6 +278,14 @@ The MVP should support a small number of reliable, well-tested workflows rather 
 
 ### 11. Satellite safety/capability separation
 Dual watch is not full duplex; frequency control is not permission to transmit; a Satellite Profile does not replace operator licensing or current operating data. Automatic Doppler/TX preparation must be gated by validated capabilities and explicit operational profiles.
+### 12. Mesh provider independence
+Mesh delivery is exposed through a provider boundary parallel to TNC/modem providers. APRS, Packet and Winlink remain usable without a mesh module.
+
+### 13. Bandwidth-aware delivery
+Compact position, text, marker and alert events may use LoRa. Maps, high-resolution imagery, video, real-time audio and large unrestricted files require a higher-bandwidth provider or a user-confirmed slow path.
+
+### 14. Lightweight mobile baseline
+External nodes own mesh routing. Optional modules are lazy-loaded, queues are bounded, repeated events are deduplicated and position/map updates adapt to movement, battery and channel conditions.
 
 ## Initial module set
 
@@ -262,16 +301,19 @@ Dual watch is not full duplex; frequency control is not permission to transmit; 
 - APRS-IS/iGate experiments;
 - richer device/profile ecosystem.
 
-## Later modules / Labs candidates
+## Planned post-MVP modules / Labs candidates
 
+- RadioLink Mesh with Meshtastic interoperability;
+- RadioLink Situational with offline maps and team coordination;
+- CoT/TAK interoperability and optional TAK Server transport;
 - SSTV;
 - selected digital modes;
 - Mercury/other modem providers;
-- Reticulum / LoRa experiments;
+- Reticulum / alternative mesh experiments;
 - modern BBS/store-and-forward concepts;
 - richer offline field knowledge features.
 
-## Initial supported device classes
+## Supported device classes roadmap
 
 - Radios with embedded BLE KISS/TNC;
 - Bluetooth KISS TNCs;
@@ -279,13 +321,28 @@ Dual watch is not full duplex; frequency control is not permission to transmit; 
 - USB audio/PTT interfaces;
 - radios with USB audio/CAT;
 - conventional radios through DigiRig/software TNC;
+- Meshtastic-compatible LoRa companion nodes through BLE/USB;
+- future RadioNode-BR/RadioLink Bridge variants exposing both radio TNC and mesh capabilities;
 - future RadioLink Bridge for analog/legacy radios.
+
+## Planned mesh/situational success criteria
+
+The post-MVP Mesh + Situational expansion is successful when a normal user can:
+
+1. connect a Meshtastic-compatible node over BLE or USB;
+2. exchange text and position with another node without Internet;
+3. see participants, messages, markers and alerts on an offline map;
+4. understand delivery state, staleness and provider limitations;
+5. interoperate with a documented CoT/TAK subset through at least one reference path;
+6. keep mesh participation in the external node when the mobile app is suspended or disconnected;
+7. run the baseline on representative phones within documented CPU, memory, battery and background-lifecycle budgets.
 
 ## Candidate first validation hardware
 
 - **BTECH UV-PRO — now lab available**, first direct BLE/KISS, radio-control and Satellite Operations reference;
 - Mobilinkd-class BLE KISS TNC;
 - DigiRig + conventional HT as a compatibility baseline;
+- two Meshtastic-compatible LoRa nodes, with exact reference hardware selected during F19;
 - one USB-native radio/interface path when available for validation.
 
 ## MVP success criteria
@@ -308,7 +365,9 @@ Satellite Operations is a planned post-MVP/high-value expansion and does not blo
 ## Non-goals for initial MVP
 
 - DMR networking;
-- LoRa mesh as a core requirement;
+- LoRa mesh as a core requirement for the initial MVP; it is a planned post-MVP provider;
+- cloning the complete ATAK feature set or UI;
+- treating LoRa as a general-purpose transport for maps, video or large files;
 - multimode infrastructure gateways;
 - replacing every DigiPi application immediately;
 - hosting arbitrary Linux services;

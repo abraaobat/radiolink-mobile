@@ -37,11 +37,11 @@ Not every finding should reach implementation. Deferred/Labs findings are intent
 | RL-RS-009 — offline-first | ADOPTED | local-first core/services | F7, F10, F11 | pending | pending |
 | RL-RS-010 — companion software can outperform radio UI | ADOPTED | mobile/desktop application UX | F5, F7, F10, F11 | pending | pending |
 | RL-RS-011 — embedded intelligence vs raw signal access | VALIDATE | RadioLink Bridge hypothesis | F15 | not started | prototype/field validation required |
-| RL-RS-012 — store-and-forward relevance | DEFERRED / LABS | modern resilient messaging | F17 | not started | research/prototype required |
+| RL-RS-012 — store-and-forward relevance | VALIDATE / BOUNDED | ADR-0006; external-node mesh/store-forward capability | F19; alternatives remain F17 | not started | Meshtastic/provider prototype required |
 | RL-RS-013 — no mandatory SBC appliance | ADOPTED | cross-platform Rust core; no-Pi runtime requirement | F0/F1 baseline | foundation adopted | ongoing host validation |
 | RL-RS-014 — location/time as context providers | ADOPTED | ADR-0005; `LocationProvider` / `TimeProvider` | F1, F6, F7, F10, F11 | pending | pending |
 | RL-RS-015 — layered diagnostics | ADOPTED | ADR-0005; diagnostic state model | F1, F2, F6, F14 | pending | pending |
-| RL-RS-016 — messaging independent from delivery mechanism | DEFERRED / LABS | future Messaging Service boundary | F17 / post-MVP | not started | research/prototype required |
+| RL-RS-016 — messaging independent from delivery mechanism | ADOPTED / BOUNDED | ADR-0006; `SituationalEvent` + Delivery Provider boundaries | F19, F20 | not started | provider mapping/interoperability required |
 | RL-RS-017 — practice and self-test | DEFERRED / LABS | future readiness/self-test tooling | F17 | not started | research required |
 | RL-RS-018 — off-grid information/data services | DEFERRED / LABS | future Data Services | F17 | not started | research required |
 

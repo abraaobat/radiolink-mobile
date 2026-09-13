@@ -14,17 +14,20 @@ Bluetooth and USB are transports, not application capabilities. The architecture
 
 Operational context such as **location and time** is also independent from the radio. A service may use RF/TNC capability from one device while location/time comes from the host, the radio, a USB GPS/GNSS source or another validated provider.
 
+Planned post-MVP mesh and situational-awareness services follow the same separation. Meshtastic-compatible mesh routing remains in an external LoRa node; RadioLink connects to the local node over BLE/USB and consumes a `MeshProvider`. CoT/TAK is an optional interoperability layer over a transport-neutral situational event model, not a replacement for the core architecture.
+
 ```text
 ┌──────────────────────────────────────────────┐
 │ Android / iOS / Linux / macOS               │
 │                                              │
 │ RadioLink Application Shell                 │
 │ Message • Position • Packet • Winlink       │
-│ Diagnostics • Radio Control                 │
+│ Mesh • Situational Map • Diagnostics        │
 │                                              │
 │ RadioLink Operations Engine                 │
 │ Capability Registry • Device Registry       │
 │ Context Registry • Provider Resolution      │
+│ Mesh/Network Providers • Delivery Policy    │
 │ Transport Manager • Lifecycle • Recovery    │
 │ Layered Diagnostics • Fallback              │
 │                                              │
@@ -53,6 +56,23 @@ Radio GPS/GNSS ──────┼→ Context Provider API → Service
 USB GPS / GPSD ──────┤
 Manual/static ───────┘
 ```
+
+Planned mesh/situational data follows a parallel provider path:
+
+```text
+Situational / Messaging Service
+             ↓
+       SituationalEvent
+      ┌──────┼───────────┐
+      ▼      ▼           ▼
+ MeshProvider  APRS mapping  Network/TAK Provider
+      ↓          ↓                ↓
+ BLE/USB node  TNC/RF         IP / TAK Server
+      ↓
+ LoRa mesh
+```
+
+The smartphone is not the required RF relay. Its external node remains responsible for mesh routing and rebroadcasting when the host sleeps or disconnects.
 
 ## Architectural layering
 
@@ -88,6 +108,22 @@ Host / device / transport-specific source
 
 No higher-level service should know whether a frame ultimately travelled over BLE, USB serial, USB audio or another supported transport. Likewise, a position service should not require location to be owned by the radio itself.
 
+Mesh services use a parallel dependency direction:
+
+```text
+Application / Situational Service
+       ↓
+Situational Event / Messaging Core
+       ↓
+Mesh or Network Provider
+       ↓
+Transport Manager
+       ↓
+Local node / server adapter
+       ↓
+LoRa mesh or IP network
+```
+
 ## Repository layers
 
 ### 1. Host Applications
@@ -102,6 +138,7 @@ Responsibilities:
 - host location/context adapters;
 - notifications;
 - platform-specific storage/adapters;
+- offline map/imagery integration;
 - background/headless execution where supported.
 
 The product is cross-platform even though development is **CLI-first on macOS/Linux** for lower-friction validation of the shared core and transports.
@@ -115,6 +152,8 @@ Preferred normal-user concepts:
 - Share position;
 - Send e-mail;
 - View stations;
+- View team map;
+- Send marker/alert;
 - Open Packet terminal;
 - Diagnostics;
 - Radio control.
@@ -129,7 +168,9 @@ Responsibilities:
 - query the Capability Registry;
 - resolve devices and adapters;
 - select an appropriate TNC/Modem Provider;
+- select an appropriate Mesh/Network Provider;
 - select/prefer an appropriate transport;
+- apply provider payload, airtime, priority and bridge policy;
 - resolve required Context Providers;
 - acquire/release radio/audio/serial/context resources;
 - start/stop operational services;
@@ -188,8 +229,10 @@ Platform-neutral domain logic:
 - context-provider interfaces/state;
 - layered diagnostic-state concepts;
 - module/service orchestration interfaces;
-- routing;
+- operation/provider routing;
 - local history abstractions;
+- transport-neutral situational-event models;
+- delivery state, staleness, provenance and deduplication concepts;
 - recovery/state concepts shared across hosts.
 
 ### 5. Protocols
@@ -201,7 +244,9 @@ Protocol codecs and state machines:
 - AX.25 framing/parsing;
 - APRS decoding/encoding;
 - Packet session helpers;
-- future Winlink transport helpers.
+- future Winlink transport helpers;
+- planned Meshtastic/protobuf and supported application-port adapters;
+- planned CoT codec/interoperability helpers.
 
 Protocol code must be testable without a real radio and must not import platform Bluetooth/USB implementations.
 
@@ -236,7 +281,11 @@ RadioDevice
 │   ├── tnc
 │   ├── radioControl
 │   ├── gpsGnssSourceExposure
-│   └── telemetry
+│   ├── telemetry
+│   ├── loraMesh
+│   ├── meshtasticInterop
+│   ├── meshRouting
+│   └── takCotRelay
 ├── receiveFrames()
 ├── sendFrame()
 └── optional radio controls
@@ -416,6 +465,70 @@ TncBackend / ModemProvider
 
 This abstraction also enables future modem-provider interoperability such as Mercury/other implementations without coupling the application directly to a proprietary modem.
 
+## Mesh / Network Provider abstraction
+
+Mesh is not modeled as a TNC capability. A mesh provider carries application events through a mesh system, while a TNC/modem provider carries radio data for protocols such as AX.25/APRS/Packet.
+
+```text
+                     RadioLink Delivery Providers
+                                │
+             ┌──────────────────┼──────────────────┐
+             │                  │                  │
+       TNC/Modem Provider   Mesh Provider    Network Provider
+       AX.25/APRS/Packet    Meshtastic       IP / TAK Server
+             │                  │                  │
+          Radio RF        LoRa mesh node       IP network
+```
+
+Conceptual mesh interface:
+
+```text
+MeshProvider
+├── connect()/disconnect()
+├── nodeDirectory()
+├── send()/receive()
+├── deliveryState()
+├── channelCapabilities()
+├── health()
+└── diagnostics()
+```
+
+The first planned provider is `MeshtasticMeshProvider` through a documented BLE/USB PhoneAPI-style adapter. Host-to-node BLE/USB lifecycle remains owned by the Transport Manager. The external node owns LoRa modulation, mesh routing/rebroadcasting and supported store/forward behavior.
+
+The provider must advertise:
+
+- supported event/payload types;
+- maximum practical payload/fragmentation behavior;
+- acknowledgement/delivery semantics;
+- queue/channel-utilization state where available;
+- encryption/security characteristics without exposing keys;
+- bridge and routing capabilities.
+
+## Situational Event model
+
+`SituationalEvent` is the shared representation for planned map/team workflows:
+
+```text
+SituationalEvent
+├── identity / source / provenance
+├── event type
+│   ├── participant position
+│   ├── text/chat
+│   ├── marker / point of interest
+│   ├── route / simple shape
+│   ├── alert / emergency
+│   └── supported telemetry/task metadata
+├── created / updated / stale / expiry time
+├── geometry / compact payload
+├── priority
+├── delivery state
+└── provider-specific extension envelope
+```
+
+Adapters may map supported subsets to Meshtastic TAK/application payloads, CoT, APRS positions/messages and local persistence. Provider conversion must report unsupported semantics rather than silently discarding them.
+
+ATAK/WinTAK/TAK Server are interoperability references. RadioLink does not embed ATAK or promise full ATAK compatibility from a partial CoT implementation.
+
 ## Layered diagnostics
 
 RadioLink must preserve the highest verified stage of a connection rather than collapsing every failure into an application error.
@@ -429,7 +542,7 @@ logical interfaces discovered
       ↓
 capability match
       ↓
-TNC/modem/context-provider handshake
+TNC/modem/mesh/network/context-provider handshake
       ↓
 protocol traffic
       ↓
@@ -442,6 +555,7 @@ Examples of useful states:
 - `Bluetooth connected; KISS service not exposed`;
 - `KISS provider ready; no AX.25 frames received yet`;
 - `APRS ready; location source unavailable for beacon TX`.
+- `Mesh node connected; selected event exceeds the provider's normal payload policy`.
 
 Diagnostics must not claim a specific physical cause if the host can only prove that a higher layer is unavailable.
 
@@ -508,6 +622,9 @@ Shared higher-level services such as:
 - module registry;
 - station/message persistence;
 - diagnostics/logging;
+- planned mesh node/channel/message state;
+- planned situational event, team and offline-map state;
+- planned CoT/TAK bridge services;
 - optional Internet bridges such as APRS-IS later.
 
 ## UI
@@ -597,7 +714,7 @@ Experimental work belongs in Labs until product fit and architectural maturity a
 Candidates:
 - Winlink/Mercury modem experiments;
 - Reticulum;
-- LoRa;
+- alternative mesh/routing experiments beyond the Meshtastic-first roadmap;
 - modern BBS/store-and-forward;
 - delivery-independent Messaging Service experiments;
 - offline radio knowledge/data services;
@@ -666,6 +783,48 @@ RF
 
 The location source may be the host, radio or another provider independently from the RF transport.
 
+## Data flow — Meshtastic mesh receive
+
+```text
+LoRa mesh
+  ↓
+Meshtastic-compatible local node
+  ↓ BLE/USB PhoneAPI-style transport
+Transport / Device Adapter
+  ↓
+Meshtastic Mesh Provider
+  ↓ protobuf/application payload
+Situational Event / Messaging Core
+  ↓
+Local persistence + deduplication + staleness
+  ↓
+Mesh / Situational UX
+```
+
+Mesh routing/rebroadcasting occurs in the external node. RadioLink may expose route/hop/channel diagnostics, but the host is not the required relay.
+
+## Data flow — TAK/CoT interoperability
+
+```text
+RadioLink SituationalEvent
+  ↓ capability-aware mapping
+Supported CoT subset
+  ↓
+Network Provider / TAK Server
+```
+
+or, for compact events supported by the mesh provider:
+
+```text
+RadioLink SituationalEvent
+  ↓ capability-aware compact mapping
+Meshtastic TAK/application payload
+  ↓
+LoRa mesh
+```
+
+Maps, map tiles, high-resolution images, video, real-time audio and unrestricted large files are not normal LoRa payloads. They must remain local, be referenced by compact metadata or use a higher-bandwidth provider. Fragmented slow-path transfer requires explicit user confirmation and visible airtime/size impact.
+
 ## Supported connection patterns
 
 ### A. Radio with embedded BLE KISS/TNC
@@ -722,6 +881,14 @@ RadioLink host ─┤
 
 RadioLink may compose capabilities and context sources from multiple paths.
 
+### H. Meshtastic-compatible LoRa companion node
+
+```text
+RadioLink host ↔ BLE/USB ↔ LoRa node ↔ Meshtastic mesh
+```
+
+The node provides mesh routing and LoRa RF. RadioLink provides messages, map/team state, diagnostics and explicit bridges. A future RadioNode-BR/RadioLink Bridge variant may combine TNC and mesh capabilities, but they remain separate providers internally.
+
 ## Key architectural constraints
 
 1. Android, iOS, Linux and macOS are first-class targets.
@@ -746,6 +913,14 @@ RadioLink may compose capabilities and context sources from multiple paths.
 20. UI presents user intent before protocol concepts.
 21. RadioLink Bridge remains an accessory, not a general-purpose computer.
 22. RadioLink Ready and Labs must not expand the MVP until validated.
+23. Mesh is a planned post-MVP provider and must not become a dependency of APRS, Packet or Winlink.
+24. Meshtastic interoperability is preferred before designing a proprietary mesh protocol.
+25. The external node owns LoRa mesh routing/rebroadcasting; the smartphone is not the required always-on relay.
+26. CoT/TAK is an interoperability adapter over a RadioLink-native event model, not proof of full ATAK compatibility.
+27. Delivery providers must expose supported event types, payload limits and delivery semantics.
+28. Low-bandwidth mesh carries compact operational events, not base maps, high-resolution images, video or real-time audio by default.
+29. Cross-network bridges are opt-in, filtered and protected against loops/duplicate amplification.
+30. Mobile support claims require measured CPU, memory, battery, map and background/reconnect behavior on representative devices.
 
 ## Interoperability strategy
 
@@ -756,6 +931,8 @@ Prefer established protocols/transports:
 - KISS;
 - AX.25;
 - APRS;
+- Meshtastic PhoneAPI/protobuf and registered application ports where applicable;
+- CoT for a documented TAK interoperability subset;
 - documented CAT/control interfaces;
 - standard GPS/GNSS/NMEA/GPSD-style interfaces where appropriate;
 - IP/network transports where they naturally apply.
@@ -766,4 +943,6 @@ RadioLink-specific extensions should only be introduced where existing standards
 
 - `docs/adr/ADR-0004-three-path-io-and-platform-ecosystem.md` — transport/provider/platform ecosystem.
 - `docs/adr/ADR-0005-context-providers-and-layered-diagnostics.md` — Context Providers, multi-source operational context and layered diagnostics.
+- `docs/adr/ADR-0006-mesh-and-tak-situational-awareness.md` — Meshtastic-first mesh, situational events, CoT/TAK interoperability and mobile/LoRa guardrails.
+- `docs/MESH-AND-SITUATIONAL-AWARENESS.md` — detailed product and architecture boundary for the post-MVP expansion.
 - `docs/research/PROMOTION-REGISTER.md` — traceability from research findings to architecture, roadmap, implementation and validation.

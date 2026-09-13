@@ -1,6 +1,6 @@
 # RadioLink Device Registry
 
-This directory is the nominal registry of radios, TNCs and interfaces used to validate RadioLink against real hardware.
+This directory is the nominal registry of radios, TNCs, mesh nodes and interfaces used to validate RadioLink against real hardware.
 
 The registry is intentionally separate from `docs/COMPATIBILITY.md`:
 
@@ -64,6 +64,9 @@ A supported profile should preserve, where applicable:
 - transport(s);
 - logical interfaces/capabilities;
 - TNC/modem provider;
+- mesh/network provider and routing location where applicable;
+- mesh protocol/firmware, region, node role and payload/delivery constraints where applicable;
+- declared TAK/CoT interoperability subset where applicable;
 - required radio-side settings/preflight recipe;
 - cable/adapter identity;
 - audio calibration when relevant;
@@ -90,5 +93,5 @@ Nominal candidates derived from research must link back to:
 This preserves the chain:
 
 ```text
-source → evidence → finding → architecture/roadmap → device profile → bench test → support state
+source → evidence → finding/decision → architecture/roadmap → device profile → bench test → support state
 ```

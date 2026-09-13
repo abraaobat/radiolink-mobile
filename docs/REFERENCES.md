@@ -102,6 +102,51 @@ See:
 - Dual watch/Main-Sub behavior does not prove simultaneous RX while TX.
 - Official-app control behavior does not automatically define an open or stable third-party protocol.
 - Frequencies/paths/tones must be stored as updateable satellite-profile data, not permanently copied from one app/manual snapshot.
+### Meshtastic
+
+Project/documentation: https://meshtastic.org/
+
+Repository: https://github.com/meshtastic/firmware
+
+TAK integration: https://github.com/meshtastic/meshtastic/blob/master/docs/software/android/user/tak.md
+
+**Role:** decentralized, low-power LoRa mesh and host-to-node interoperability reference.
+
+RadioLink should study and interoperate with Meshtastic for:
+
+- external-node mesh routing/rebroadcasting;
+- BLE/USB PhoneAPI-style client connections;
+- compact text, position and telemetry payloads;
+- channel/node identity and delivery state;
+- constrained airtime/queue behavior;
+- supported TAK/application payloads;
+- operation without cellular or Internet infrastructure.
+
+Meshtastic is the first planned `MeshProvider`, not a replacement for RadioLink's KISS/AX.25/APRS stack. A Meshtastic-compatible node is not automatically a TNC, and LoRa must not be treated as a general-purpose path for maps, video, real-time audio or unrestricted large files.
+
+---
+
+### TAK / ATAK-CIV
+
+Product center: https://tak.gov/
+
+ATAK-CIV repository: https://github.com/TAK-Product-Center/atak-civ
+
+TAK protocol reference: https://github.com/TAK-Product-Center/atak-civ/blob/main/takproto/README.txt
+
+**Role:** moving-map, situational-event, CoT and client/server interoperability reference.
+
+RadioLink should study the TAK ecosystem for:
+
+- participant/position presentation;
+- chat and operational events;
+- markers, routes, shapes and alerts;
+- event timestamps, stale/expiry behavior and identity;
+- CoT encoding/interoperability;
+- optional TAK Server transport;
+- plugin/provider boundaries.
+
+ATAK is not itself the LoRa mesh routing layer. RadioLink will build a cross-platform native Situational module and a documented CoT subset rather than embedding ATAK or claiming full compatibility from partial event support.
 
 ---
 
@@ -127,7 +172,7 @@ Key lessons currently adopted from the corpus include:
 - mode switching requires lifecycle/resource orchestration;
 - known-good radio/interface/audio/PTT settings should become reusable device profiles;
 - TNC/modem implementations should sit behind stable provider interfaces;
-- experimental Reticulum/LoRa/BBS concepts should remain in Labs until independently validated.
+- experimental Reticulum/alternative-mesh/BBS concepts should remain in Labs until independently validated; Meshtastic interoperability follows the bounded ADR-0006 roadmap.
 
 Research documentation:
 
@@ -198,6 +243,11 @@ HTCommander
 
 BTECH UV-PRO official app/firmware
   -> owned BLE/KISS + satellite/radio-control behavior reference
+Meshtastic
+  -> low-power LoRa mesh / external-node routing / client interoperability
+
+TAK / ATAK-CIV
+  -> moving map / situational events / CoT interoperability
 
 The Tech Prepper corpus
   -> field workflow / integration friction / product discovery
@@ -228,3 +278,6 @@ When studying external projects and sources:
 10. Record firmware/platform/device-version context when capability depends on it.
 11. For Satellite Operations, keep orbit/pass logic generic and isolate device-specific tuning/control inside the Radio Driver.
 12. Treat full duplex as an independently validated capability; never infer it from dual watch.
+11. Treat LoRa payload size, airtime and congestion as first-class delivery constraints.
+12. Declare TAK/CoT interoperability by tested event subset rather than a generic compatibility claim.
+13. Keep mesh routing on the external node unless a future architecture decision explicitly changes that boundary.

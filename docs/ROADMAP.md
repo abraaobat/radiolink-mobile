@@ -6,6 +6,8 @@ Status legend: `NOT STARTED` · `IN PROGRESS` · `DONE` · `BLOCKED`
 
 Deliver one cross-platform amateur-radio platform for Android, iOS, Linux and macOS where users connect a compatible radio/TNC/interface, choose an operational goal such as messaging, position, Packet, Winlink or satellite operation, and operate without requiring a Raspberry Pi/DigiPi appliance.
 
+After the initial KISS/AX.25/APRS platform is proven, RadioLink expands into resilient off-grid mesh and map-centered situational awareness through a Meshtastic-first `MeshProvider`, an offline `SituationalEvent` service and a documented CoT/TAK interoperability subset.
+
 RadioLink must support three official I/O paths without coupling services to any one of them:
 
 1. **Wireless Digital** — Bluetooth/BLE;
@@ -17,6 +19,7 @@ RadioLink must support three official I/O paths without coupling services to any
 # Platform tracks
 
 The existing F0–F17 phase numbering is preserved for continuity. Satellite Operations is added as F18.
+The existing phase numbering is preserved for continuity. The broader platform is organized into six tracks.
 
 ## Track A — Core + Applications
 
@@ -53,6 +56,11 @@ Primary phase: `F17`.
 Orbit/pass prediction, Doppler, satellite profiles, radio-control orchestration, satellite Packet/APRS and later full-duplex/ground-station integration.
 
 Primary phase: `F18`.
+## Track G — Mesh + Situational Awareness
+
+Planned post-MVP Meshtastic interoperability, lightweight off-grid coordination, offline maps and CoT/TAK interoperability.
+
+Primary phases: `F19`, `F20`.
 
 ---
 
@@ -90,6 +98,10 @@ Establish product boundaries, cross-platform architecture, repository layout and
 - [x] Select BTECH UV-PRO as first Satellite Operations radio/control reference.
 - [ ] Record exact UV-PRO hardware/firmware version.
 - [ ] Capture UV-PRO Bluetooth services/characteristics and control/KISS paths.
+- [x] Define the bounded post-MVP Mesh + Situational expansion and record ADR-0006.
+- [x] Select the first owned-hardware compatibility PoC path: macOS CLI + DigiRig + Quansheng UV-K1/UV-K5 + software TNC.
+- [ ] Acquire/borrow and validate the first direct BLE KISS reference device; BTECH UV-Pro is the current P1 candidate.
+- [ ] Capture Bluetooth services/characteristics for the first BLE reference device.
 - [ ] Select the first USB-native reference device/interface path.
 - [ ] Define KISS/AX.25/APRS packet fixtures.
 
@@ -433,6 +445,10 @@ Make hardware support capability-driven and capture known-good radio/interface/c
   - [ ] Serial/data transport.
   - [ ] KISS.
   - [ ] Embedded TNC.
+  - [ ] LoRa/mesh.
+  - [ ] Meshtastic interoperability.
+  - [ ] Mesh routing/rebroadcasting in node.
+  - [ ] TAK/CoT relay or codec subset.
   - [ ] Radio GPS/GNSS source exposure.
   - [ ] telemetry.
 - [ ] Tested-platform matrix: Android / iOS / Linux / macOS.
@@ -449,6 +465,7 @@ Make hardware support capability-driven and capture known-good radio/interface/c
 - [ ] Class E — Bluetooth CAT/control only.
 - [ ] Class F — Bluetooth audio + PTT software-TNC candidate.
 - [ ] Class G — Multi-transport/composite device.
+- [ ] Class H — Meshtastic-compatible LoRa companion node.
 - [ ] RadioLink Bridge.
 
 ### Nominal reference targets
@@ -515,6 +532,7 @@ Provide an optional compact accessory for radios without smartphone/desktop-frie
 - [ ] Optional CAT/control.
 - [ ] Local configuration/profile storage.
 - [ ] Health/telemetry.
+- [ ] Optional LoRa/Meshtastic companion capability after the base Bridge/TNC path is proven.
 - [ ] BLE ↔ USB fallback behavior.
 - [ ] Reference cable/interface family.
 - [ ] Field enclosure/power study.
@@ -543,6 +561,7 @@ Define a future open, documented interoperability profile for radios and accesso
 - [ ] CAT/control capability description.
 - [ ] Frequency/split/full-duplex capability description for advanced services such as Satellite Operations.
 - [ ] PTT/GPS/battery/telemetry capability description.
+- [ ] Optional mesh/Meshtastic capability and delivery-constraint description.
 - [ ] Context-provider capability/source description where relevant.
 - [ ] Reference implementation using RadioLink Bridge.
 - [ ] Conformance test concept.
@@ -577,7 +596,7 @@ Continuously mine real-world workflows, open-source projects and technical creat
 ### Labs candidates
 - [ ] Winlink/Mercury modem-provider experiments.
 - [ ] Reticulum.
-- [ ] LoRa.
+- [ ] Alternative mesh/routing protocols beyond the Meshtastic-first roadmap.
 - [ ] Modern BBS/store-and-forward messaging.
 - [ ] Future delivery-independent Messaging Service experiments.
 - [ ] Offline radio knowledge assistant / optional Data Services.
@@ -667,6 +686,96 @@ See `docs/SATELLITE-OPERATIONS.md`.
 
 ---
 
+## F19 — Mesh Provider + Meshtastic Interoperability
+
+**Status:** NOT STARTED
+
+### Goal
+
+Add resilient off-grid mesh delivery without coupling the application to one mesh firmware and without making the smartphone the required RF relay.
+
+### Deliverables
+
+- [ ] Define platform-neutral `MeshProvider` interface.
+- [ ] Define mesh node/channel/message/delivery-state models.
+- [ ] Define provider capabilities for event types, payload limits, fragmentation, acknowledgement, queue and security semantics.
+- [ ] Add mesh-provider registry/resolution to the Operations Engine.
+- [ ] Select/acquire two Meshtastic-compatible reference nodes and create exact device profiles.
+- [ ] Build captured protobuf/application-port fixtures and simulator tests.
+- [ ] Implement Meshtastic-compatible node discovery and connection over BLE.
+- [ ] Implement Meshtastic-compatible node connection over USB/serial where supported.
+- [ ] Implement node directory and local-node state.
+- [ ] Implement short text send/receive.
+- [ ] Implement position send/receive.
+- [ ] Implement supported telemetry/status receive.
+- [ ] Expose delivery, retry, queue, channel-utilization and hop/route diagnostics where available.
+- [ ] Implement deduplication, staleness and bounded queues.
+- [ ] Store credentials/channel keys through platform-secure facilities and redact diagnostics.
+- [ ] Implement explicit, filtered bridge-policy hooks with loop prevention.
+- [ ] Validate two-node offline exchange without Internet.
+- [ ] Validate reconnect and host-app suspension behavior while the external node continues mesh participation.
+- [ ] Benchmark CPU, memory, battery and BLE background behavior on representative Android/iOS devices.
+- [ ] Document region/frequency, node-role and airtime preflight requirements.
+
+### Guardrails
+
+- Meshtastic interoperability comes before a RadioLink-specific mesh protocol.
+- Mesh traffic does not use the TNC/Modem Provider interface.
+- The external node owns LoRa modulation and mesh routing/rebroadcasting.
+- APRS, Packet and Winlink remain independently installable/usable.
+- Normal LoRa delivery is limited to compact events; large content requires another provider or an explicit slow path.
+
+### Exit criteria
+
+Two RadioLink hosts exchange text and position through two Meshtastic-compatible nodes with no Internet; connection/delivery/queue state is visible; the external nodes remain mesh participants independently of host lifecycle; and mobile resource measurements are documented.
+
+---
+
+## F20 — Situational Awareness + CoT/TAK Interoperability
+
+**Status:** NOT STARTED
+
+### Goal
+
+Provide a lightweight, offline-first team map and coordination service with capability-aware delivery over mesh, APRS and IP/TAK paths.
+
+### Deliverables
+
+- [ ] Define transport-neutral `SituationalEvent` schema.
+- [ ] Represent identity/source/provenance, priority, timestamps, staleness, expiry and delivery state.
+- [ ] Implement offline map baseline using efficient preloaded/vector content.
+- [ ] Implement participant/team position view.
+- [ ] Implement chat/event timeline.
+- [ ] Implement markers and points of interest.
+- [ ] Implement routes and simple shapes.
+- [ ] Implement alerts/emergencies and acknowledgement state.
+- [ ] Implement local persistence, deduplication and event expiry.
+- [ ] Implement provider-aware send UI showing availability, payload/airtime limits and expected delivery behavior.
+- [ ] Map compatible position/message subsets to APRS where semantics permit.
+- [ ] Implement a documented CoT encode/decode subset.
+- [ ] Implement TAK Server/network-provider feasibility and first supported transport.
+- [ ] Implement supported Meshtastic TAK/application-payload mappings.
+- [ ] Report unsupported/lossy field mappings instead of silently dropping them.
+- [ ] Add opt-in, filtered bridges among Mesh, APRS and IP/TAK providers with loop prevention.
+- [ ] Support compact metadata references for content that must transfer over a higher-bandwidth provider.
+- [ ] Benchmark map rendering, storage, CPU, memory and battery on representative phones.
+- [ ] Interoperability-test the declared CoT subset with at least one ATAK-CIV/WinTAK/TAK Server reference path.
+- [ ] Document that ATAK is a client/platform using network transports, not the LoRa mesh routing layer.
+
+### Guardrails
+
+- Build a RadioLink-native cross-platform module, not a full ATAK clone.
+- Do not claim full ATAK compatibility from partial CoT support.
+- Do not send base maps, high-resolution images, video, real-time audio or unrestricted large files over normal LoRa delivery.
+- Position/network bridges are explicit, scoped and privacy-aware.
+- Situational UI and map state must remain usable offline.
+
+### Exit criteria
+
+RadioLink displays participants, messages, markers, routes and alerts on an offline map; sends each event only through a capable provider; interoperates with a documented CoT/TAK reference subset; and remains within documented mobile resource budgets.
+
+---
+
 # MVP validation matrix
 
 The MVP should prove architectural portability, not every possible combination.
@@ -692,6 +801,20 @@ Protocol/service
 ```
 
 The owned UV-PRO now provides the first executable direct BLE/KISS target. The DigiRig path remains the owned legacy/audio compatibility baseline. Satellite Operations is a planned high-value expansion and does not block the initial MVP.
+
+Mesh/Situational work begins as bounded interface/fixture spikes only when useful during the MVP. Its full exit criteria are post-MVP and do not block the validation matrix above.
+
+Post-MVP expansion gate:
+
+```text
+F19 Mesh Provider / Meshtastic
+  ↓
+text + position + delivery diagnostics over two offline nodes
+  ↓
+F20 Situational / CoT-TAK
+  ↓
+offline map + team events + declared interoperability subset
+```
 
 ---
 
@@ -741,6 +864,15 @@ F17 Labs / Research runs continuously in parallel.
 ```
 
 F18.1 pass prediction may start before the full radio stack is complete because it depends primarily on TLE + Location/Time providers. On-air Doppler/Packet milestones wait for validated F2/F9/F3/F4/F7 capabilities.
+Planned post-MVP product expansion:
+
+```text
+F1 provider/event boundaries
+          ↓
+F19 Mesh Provider + Meshtastic interoperability
+          ↓
+F20 Situational Awareness + CoT/TAK interoperability
+```
 
 ---
 
