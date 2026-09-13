@@ -18,7 +18,7 @@ See also: `DIGIPI-BENCHMARK.md`.
 
 ### Mobilinkd TNC4
 
-**Role:** hardware/TNC reference for the RadioNode-BR and for external BLE KISS TNC interoperability.
+**Role:** hardware/TNC reference for the RadioNode-BR/RadioLink Bridge path and for external BLE KISS TNC interoperability.
 
 Key concepts to preserve as reference points:
 
@@ -29,7 +29,7 @@ Key concepts to preserve as reference points:
 - 1200/9600 baud capability as a longer-term benchmark;
 - compact portable implementation.
 
-For RadioLink, Mobilinkd-class hardware should be represented as a capability-driven `TncTransport`, not as a special case inside APRS or Packet modules.
+For RadioLink, Mobilinkd-class hardware should be represented as a capability-driven TNC provider/transport path, not as a special case inside APRS or Packet modules.
 
 ---
 
@@ -59,11 +59,49 @@ Its main reference value is concentrated in:
 
 - F2 — Bluetooth Device Layer;
 - F9 — Radio Control Module;
-- F13 — Driver SDK + Compatibility Matrix.
+- F13 — Driver SDK + Compatibility Matrix;
+- F18 — Satellite Operations radio-control path, where applicable.
 
 #### Guardrail
 
 Bluetooth control support discovered through HTCommander or similar projects must not be interpreted as proof of KISS/TNC capability. RadioLink must continue to represent control, audio, serial/data, KISS and embedded-TNC capabilities independently.
+
+---
+
+### BTECH UV-PRO official app / firmware
+
+**Role:** first owned modern-radio behavioral and manufacturer-documentation reference for BLE/KISS, Radio Control and Satellite Operations.
+
+Primary sources:
+
+- UV-PRO firmware changelog: https://baofengtech.com/uv-pro-firmware-changelog/
+- BTECH UV Programmer app manual: https://baofengtech.com/wp-content/uploads/2025/11/BTECH-APP-Updated-Manual-2025-9-9.pdf
+- UV-PRO product/support page: https://baofengtech.com/product/uv-pro/
+
+Manufacturer documentation currently provides reference evidence for:
+
+- Bluetooth KISS TNC operation;
+- APRS/Packet workflows;
+- app-driven radio control/configuration;
+- satellite mode;
+- satellite display data such as azimuth, elevation, range and pass countdown in firmware history;
+- independent TX/RX frequency configuration for the KISS profile in current firmware history.
+
+These sources define **research and validation targets**, not RadioLink support claims. The exact lab unit, firmware, Bluetooth services/characteristics and control commands must be captured and tested before capabilities are promoted.
+
+For Satellite Operations, the official app is a behavioral benchmark for what a user can accomplish, while RadioLink's implementation remains generic and capability-driven.
+
+See:
+
+- `SATELLITE-OPERATIONS.md`;
+- `devices/profiles/btech-uv-pro.md`.
+
+#### Guardrails
+
+- Official satellite mode does not prove full duplex.
+- Dual watch/Main-Sub behavior does not prove simultaneous RX while TX.
+- Official-app control behavior does not automatically define an open or stable third-party protocol.
+- Frequencies/paths/tones must be stored as updateable satellite-profile data, not permanently copied from one app/manual snapshot.
 
 ---
 
@@ -158,6 +196,9 @@ Mobilinkd TNC4
 HTCommander
   -> Bluetooth radio integration / control / drivers
 
+BTECH UV-PRO official app/firmware
+  -> owned BLE/KISS + satellite/radio-control behavior reference
+
 The Tech Prepper corpus
   -> field workflow / integration friction / product discovery
 
@@ -185,3 +226,5 @@ When studying external projects and sources:
 8. Keep contradictory observations visible rather than silently reconciling them.
 9. Raise confidence when the same problem appears independently across multiple sources.
 10. Record firmware/platform/device-version context when capability depends on it.
+11. For Satellite Operations, keep orbit/pass logic generic and isolate device-specific tuning/control inside the Radio Driver.
+12. Treat full duplex as an independently validated capability; never infer it from dual watch.
