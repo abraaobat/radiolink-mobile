@@ -713,7 +713,7 @@ Experimental work belongs in Labs until product fit and architectural maturity a
 
 Candidates:
 - Winlink/Mercury modem experiments;
-- Reticulum;
+- Reticulum (gated Labs PoC; see `docs/RETICULUM.md`);
 - alternative mesh/routing experiments beyond the Meshtastic-first roadmap;
 - modern BBS/store-and-forward;
 - delivery-independent Messaging Service experiments;

@@ -113,7 +113,7 @@ RadioLink Situational is not a full ATAK clone. It adopts the relevant cross-pla
 Research area for ideas that should not expand the MVP until validated, including:
 
 - Winlink/Mercury experiments beyond the core Packet path;
-- Reticulum;
+- Reticulum (gated Labs PoC; see `docs/RETICULUM.md`);
 - alternative mesh/routing protocols beyond the Meshtastic-first plan;
 - modern BBS/store-and-forward concepts;
 - offline radio knowledge tools;

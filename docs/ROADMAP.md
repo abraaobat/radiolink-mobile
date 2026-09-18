@@ -595,7 +595,7 @@ Continuously mine real-world workflows, open-source projects and technical creat
 
 ### Labs candidates
 - [ ] Winlink/Mercury modem-provider experiments.
-- [ ] Reticulum.
+- [ ] Reticulum Labs PoC — gated; implementation begins only after the real KISS/AX.25/APRS pipeline is stable. See `docs/RETICULUM.md`.
 - [ ] Alternative mesh/routing protocols beyond the Meshtastic-first roadmap.
 - [ ] Modern BBS/store-and-forward messaging.
 - [ ] Future delivery-independent Messaging Service experiments.
@@ -603,6 +603,18 @@ Continuously mine real-world workflows, open-source projects and technical creat
 - [ ] Field readiness/self-test/exercise tooling.
 - [ ] Field power/telemetry integrations.
 - [ ] Additional digital modes.
+
+### Reticulum implementation gate
+
+Reticulum is registered now as a future Labs experiment, not as current implementation work.
+
+Start the first Reticulum PoC only after:
+- F3 KISS streaming is stable on a real path;
+- F4 AX.25/APRS has captured/live bidirectional validation;
+- the Operations Engine has at least one real end-to-end transport/provider pipeline bench-validated, with DigiRig + Dire Wolf TCP KISS as the preferred first path;
+- the experiment can be added behind existing provider/service boundaries without changing APRS/Packet internals.
+
+The staged PoC and promotion criteria are defined in `docs/RETICULUM.md`.
 
 ### Guardrail
 Labs experiments must not become mandatory dependencies of RadioLink Core or the MVP until product value and architecture fit are demonstrated.

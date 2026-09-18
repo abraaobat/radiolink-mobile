@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "projectId": "radiolink-mobile",
-  "updatedAt": "2026-09-10T18:59:00-04:00",
+  "updatedAt": "2026-09-18T18:26:55-04:00",
   "status": "F1/F4 core em validação",
   "statusClass": "validate",
   "progress": 50,
-  "roadmap": "F0–F17 • F1/F3/F4 ativos",
+  "roadmap": "F0–F20 • F1/F3/F4 ativos • Reticulum em Labs com gate pós-APRS",
   "current": "KISS streaming, AX.25 UI frames, APRS bidirecional e golden fixture estão implementados e validados em CI. O F1 também avançou com RadioDevice, TransportKind, CapabilitySet, DeviceRegistry, TNC Provider contract, estados de sessão e Operations Engine capaz de resolver dispositivo lógico → transporte KISS → provider pronto para APRS/Packet.",
   "architecture": "Operation → Operations Engine → RadioDevice → Transport → TNC/Modem Provider → KISS → AX.25 → APRS/Packet → RF",
   "next": "Conectar o primeiro provider/transporte real ao Operations Engine, preferencialmente Dire Wolf TCP KISS no fluxo host-first com DigiRig, e capturar a primeira fixture real sem alterar o core de protocolo.",
@@ -21,11 +21,12 @@
     "Golden deterministic fixture ✓",
     "Dire Wolf TCP KISS adapter",
     "Captured real fixture",
-    "BLE / USB / Audio-PTT"
+    "BLE / USB / Audio-PTT",
+    "Reticulum Labs PoC gate ✓ documentado; implementação adiada até pipeline real KISS/AX.25/APRS estável"
   ],
   "activity": {
-    "date": "2026-09-10",
-    "type": "core-integration",
-    "text": "F1 advanced with CI-validated logical-device, transport, capability and TNC-provider resolution, while F3/F4 protocol core remains validated independently of physical hardware."
+    "date": "2026-09-18",
+    "type": "roadmap-docs",
+    "text": "Reticulum foi consolidado em RadioLink Labs com gate explícito: só inicia PoC após validação real do pipeline KISS/AX.25/APRS e sem alterar o core APRS/Packet."
   }
 }

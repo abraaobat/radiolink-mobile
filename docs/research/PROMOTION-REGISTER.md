@@ -42,6 +42,7 @@ Not every finding should reach implementation. Deferred/Labs findings are intent
 | RL-RS-014 — location/time as context providers | ADOPTED | ADR-0005; `LocationProvider` / `TimeProvider` | F1, F6, F7, F10, F11 | pending | pending |
 | RL-RS-015 — layered diagnostics | ADOPTED | ADR-0005; diagnostic state model | F1, F2, F6, F14 | pending | pending |
 | RL-RS-016 — messaging independent from delivery mechanism | ADOPTED / BOUNDED | ADR-0006; `SituationalEvent` + Delivery Provider boundaries | F19, F20 | not started | provider mapping/interoperability required |
+| OPP-008 — Reticulum / multi-transport networking | DEFERRED / LABS | optional future network/provider module; `docs/RETICULUM.md` | F17 gated PoC after stable real KISS/AX.25/APRS pipeline | not started | staged bench PoC required before promotion |
 | RL-RS-017 — practice and self-test | DEFERRED / LABS | future readiness/self-test tooling | F17 | not started | research required |
 | RL-RS-018 — off-grid information/data services | DEFERRED / LABS | future Data Services | F17 | not started | research required |
 
